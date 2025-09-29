@@ -2,7 +2,7 @@
   "name": "B.M.B-TECH",
   "description": "ʙᴇsᴛ ᴡʜᴀᴛsᴀᴘᴘ ʙᴏᴛ ᴅᴇᴠᴇʟᴏᴘᴇᴅ ʙʏ ʙᴍʙ ᴛᴇᴄʜ 🇹🇿",
   "keywords": ["bot", "node", "baileys", "whatsapp"],
-  "logo": "https://files.catbox.moe/hflcbc.jpg",
+  "logo": "https://files.catbox.moe/6tojfu.jpg",
   "repository": "https://github.com/ekitale/maths-project",
   "succes_url": "/",
   "stack": "heroku-24",
@@ -54,7 +54,7 @@
     },
     "BOT_MENU_LINKS": {
       "description": "add one or many link for your bot menu  ; eg : url1,url2,url3.....",
-      "value": "https://files.catbox.moe/hflcbc.jpg",
+      "value": "https://files.catbox.moe/6tojfu.jpg",
       "required": false
     },
     "PUBLIC_MODE": {
@@ -82,9 +82,9 @@
       "value": "𝙱.𝙼.𝙱-𝚇𝙼𝙳"
     },
     "NUMERO_OWNER": {
-      "desc": "Your number , dont put '+' and put you area code(exemple of kenya '254')",
+      "desc": "Your number , dont put '+' and put you area code(exemple of Tanzania 🇹🇿'255')",
       "required": true,
-      "value": "255767××××"
+      "value": "255×××××"
     },
     "WARN_COUNT": {
       "desc": "this is the limit of warn for warning commandes",
@@ -106,14 +106,14 @@
       "value": "no",
       "required": true
     },
-    "CHAT_BOT": {
+    "CHATBOT": {
       "description": "Turn on the chatbot reply system (yes = active, no = deactive)",
       "value": "no",
       "required": false
     },
     "AUTO_BIO": {
-      "description": "Enable automatic bio update (yes = active, no = deactive)",
-      "value": "yes",
+      "description": "Enable auto bio response in auto bio (yes = active, no = deactive)",
+      "value": "no",
       "required": false
     }
   },
@@ -122,10 +122,11 @@
       "url": "heroku/nodejs"
     },
     {
-      "url": "https://github.com/heroku/heroku-buildpack-nodejs.git"
+      "url": "https://github.com/clhuang/heroku-buildpack-webp-binaries.git"
     },
     {
       "url": "https://github.com/jonathanong/heroku-buildpack-ffmpeg-latest"
     }
   ]
-}
+  }
+    
