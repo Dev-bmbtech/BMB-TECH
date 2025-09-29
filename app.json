@@ -64,28 +64,28 @@
     },
     "SESSION_ID": {
       "description": "Put your session ID , the code you receive after scanning Qr code",
-      "value": "",
+      "value": "CHANGE_THIS",
       "required": true
     },
     "OWNER_NAME": {
       "description": "Your Name",
-      "required": false,
-      "value": "𝙱.𝙼.𝙱-𝚇𝙼𝙳"
+      "value": "𝙱.𝙼.𝙱-𝚇𝙼𝙳",
+      "required": false
     },
     "NUMERO_OWNER": {
       "description": "Your number , don't put '+' and put your area code (example of Tanzania 🇹🇿: 255772341432)",
-      "required": true,
-      "value": "255...."
+      "value": "255772341432",
+      "required": true
     },
     "WARN_COUNT": {
       "description": "This is the limit of warnings for warning commands",
-      "required": false,
-      "value": "3"
+      "value": "3",
+      "required": false
     },
     "STARTING_BOT_MESSAGE": {
       "description": "If you don't want starting-bot-message put no else put yes",
-      "required": true,
-      "value": "yes"
+      "value": "yes",
+      "required": true
     },
     "PRESENCE": {
       "description": "Mark your presence: 1 online. 2 typing a message. 3 recording . Or leave the field blank to indicate your real state.",
@@ -106,6 +106,12 @@
       "description": "Enable auto bio response in auto bio (yes = active, no = deactive)",
       "value": "no",
       "required": false
+    }
+  },
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "free"
     }
   },
   "buildpacks": [
