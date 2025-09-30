@@ -2,9 +2,9 @@
   "name": "B.M.B-TECH",
   "description": "ʙᴇsᴛ ᴡʜᴀᴛsᴀᴘᴘ ʙᴏᴛ ᴅᴇᴠᴇʟᴏᴘᴇᴅ ʙʏ ʙᴍʙ ᴛᴇᴄʜ 🇹🇿",
   "keywords": ["bot", "node", "baileys", "whatsapp"],
-  "logo": "https://files.catbox.moe/6tojfu.jpg",
+  "logo": "https://files.catbox.moe/hflcbc.jpg",
   "repository": "https://github.com/ekitale/maths-project",
-  "success_url": "/",
+  "succes_url": "/",
   "stack": "heroku-24",
   "env": {
     "PREFIX": {
@@ -13,17 +13,17 @@
       "required": true
     },
     "AUTO_READ_STATUS": {
-      "description": "Your contact status will be read automatically (yes = active, no = deactive ; don't write in capital letter)",
+      "description": "Your contact status will be read automatically(type yes to active or no to deactive ; don't write in capital letter)",
       "value": "yes",
       "required": false
     },
     "AUTO_DOWNLOAD_STATUS": {
-      "description": "Your contact status will be downloaded automatically and sent to you (yes = active, no = deactive ; don't write in capital letter)",
+      "description": "Your contact status will be download automatically and send to you(type yes to active or no to deactive ; don't write in capital letter)",
       "value": "no",
       "required": false
     },
     "AUTO_READ": {
-      "description": "Your contact messages will be read automatically (yes = active, no = deactive ; don't write in capital letter)",
+      "description": "Your contact  will be read messages automatically(type yes to active or no to deactive ; don't write in capital letter)",
       "value": "no",
       "required": false
     },
@@ -43,49 +43,58 @@
       "required": true
     },
     "PM_PERMIT": {
-      "description": "Other users can't use your bot in pm (yes = active, no = deactive ; don't write in capital letter)",
+      "description": "Other user can't use your bot in pm (type yes to active or no to deactive ; don't write in capital letter)",
       "value": "no",
       "required": false
     },
     "BOT_NAME": {
-      "description": "Put a name for your bot",
+      "description": "put A name for your bot",
       "value": "B.M.B-TECH",
       "required": false
     },
     "BOT_MENU_LINKS": {
-      "description": "Add one or many links for your bot menu ; eg : url1,url2,url3.....",
-      "value": "https://files.catbox.moe/6tojfu.jpg",
+      "description": "add one or many link for your bot menu  ; eg : url1,url2,url3.....",
+      "value": "https://files.catbox.moe/hflcbc.jpg",
       "required": false
     },
     "PUBLIC_MODE": {
-      "description": "Type yes to put your bot on public mode or no to put it on private mode",
+      "description": "type yes to put your bot on public mode or no to put it on private mod",
       "value": "yes",
+      "required": false
+    },
+    "HEROKU_API_KEY": {
+      "description": "insert your heroku api-key (this is optionnal)",
+      "value": "HRKU-6930f8d0-3dde-4024-8bc5-ea03012e0fc1",
+      "required": false
+    },
+    "HEROKU_APP_NAME": {
+      "description": "insert your heroku APP NAME (put the name you put on top)",
       "required": false
     },
     "SESSION_ID": {
-      "description": "Put your session ID , the code you receive after scanning Qr code",
-      "value": "CHANGE_THIS",
+      "description": "put your session ID , the code you receive after scanning Qr code",
+      "value": "",
       "required": true
     },
     "OWNER_NAME": {
-      "description": "Your Name",
-      "value": "𝙱.𝙼.𝙱-𝚇𝙼𝙳",
-      "required": false
+      "desc": "Your Name",
+      "required": false,
+      "value": "𝙱.𝙼.𝙱-𝚇𝙼𝙳"
     },
     "NUMERO_OWNER": {
-      "description": "Your number , don't put '+' and put your area code (example of Tanzania 🇹🇿: 255772341432)",
-      "value": "255772341432",
-      "required": true
+      "desc": "Your number , dont put '+' and put you area code(exemple of kenya '254')",
+      "required": true,
+      "value": "255767××××"
     },
     "WARN_COUNT": {
-      "description": "This is the limit of warnings for warning commands",
-      "value": "3",
-      "required": false
+      "desc": "this is the limit of warn for warning commandes",
+      "required": false,
+      "value": "3"
     },
     "STARTING_BOT_MESSAGE": {
-      "description": "If you don't want starting-bot-message put no else put yes",
-      "value": "yes",
-      "required": true
+      "description": "if you don't want startting-bot-message put no else put yes",
+      "required": true,
+      "value": "yes"
     },
     "PRESENCE": {
       "description": "Mark your presence: 1 online. 2 typing a message. 3 recording . Or leave the field blank to indicate your real state.",
@@ -93,25 +102,24 @@
       "required": false
     },
     "ANTI_DELETE_MESSAGE": {
-      "description": "If you want to enable anti delete message put yes else put no",
+      "description": "if you want to enable anti delete message put yes else put no",
       "value": "no",
       "required": true
     },
-    "CHATBOT": {
+    "CHAT_BOT": {
       "description": "Turn on the chatbot reply system (yes = active, no = deactive)",
       "value": "no",
       "required": false
     },
-    "AUTO_BIO": {
-      "description": "Enable auto bio response in auto bio (yes = active, no = deactive)",
+    "AUDIO_CHAT_BOT": {
+      "description": "Enable audio response in chatbot (yes = active, no = deactive)",
       "value": "no",
       "required": false
-    }
-  },
-  "formation": {
-    "web": {
-      "quantity": 1,
-      "size": "free"
+    },
+    "AUTO_BIO": {
+      "description": "Enable automatic bio update (yes = active, no = deactive)",
+      "value": "yes",
+      "required": false
     }
   },
   "buildpacks": [
@@ -119,10 +127,10 @@
       "url": "heroku/nodejs"
     },
     {
-      "url": "https://github.com/clhuang/heroku-buildpack-webp-binaries.git"
+      "url": "https://github.com/heroku/heroku-buildpack-nodejs.git"
     },
     {
-      "url": "https://github.com/jonathanong/heroku-buildpack-ffmpeg-latest"
+      "url": "https://github.com/heroku/heroku-buildpack-nodejs.git"
     }
   ]
 }
