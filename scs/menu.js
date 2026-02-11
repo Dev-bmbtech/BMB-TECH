@@ -1,181 +1,191 @@
-const { bmbtz } = require(__dirname + "/../devbmb/bmbtz");
-const os = require('os');
+const util = require("util");
+const fs = require("fs-extra");
+const path = require("path");
+const os = require("os");
 const moment = require("moment-timezone");
+const { format } = require(__dirname + "/../devbmb/mesfonctions");
+const { bmbtz } = require(__dirname + "/../devbmb/bmbtz");
 const s = require(__dirname + "/../settings");
-const fs = require('fs');
-const path = require('path');
 
-// Contact message for verified context
-const quotedContact = {
-  key: {
-    fromMe: false,
-    participant: `0@s.whatsapp.net`,
-    remoteJid: "status@broadcast"
-  },
-  message: {
-    contactMessage: {
-      displayName: "B.M.B VERIFIED ✅",
-      vcard: "BEGIN:VCARD\nVERSION:3.0\nFN:B.M.B VERIFIED ✅\nORG:BMB-TECH BOT;\nTEL;type=CELL;type=VOICE;waid=255767862457:+255772341432\nEND:VCARD"
+// ====== BUILD MENU FUNCTION WITH RANDOM STYLES ======
+function buildMenu(coms, prefixe) {
+  const styles = [
+
+    // Boxed Style
+    (coms, prefixe) => {
+      let out = `📋 *B.M.B MENU*\n`;
+      for (const cat in coms) {
+        out += `\n╔═══════ ${cat.toUpperCase()} ═══════╗\n`;
+        coms[cat].forEach((cmd) => {
+          out += `║ ⚙️ ${prefixe}${cmd}\n`;
+        });
+        out += `╚════════════════════════╝\n`;
+      }
+      return out;
+    },
+
+    // Minimal Clean
+    (coms, prefixe) => {
+      let out = `🧾 *COMMANDS OVERVIEW*\n\n`;
+      for (const cat in coms) {
+        out += `📂 ${cat}\n`;
+        coms[cat].forEach((cmd) => {
+          out += `➤ ${prefixe}${cmd}\n`;
+        });
+        out += `-----------------------\n`;
+      }
+      return out;
+    },
+
+    // Zebra Layout
+    (coms, prefixe) => {
+      let out = `📑 *BMB TOOL MENU*\n\n`;
+      let i = 0;
+      for (const cat in coms) {
+        const bar = i % 2 === 0 ? "▰▰▰" : "▱▱▱";
+        out += `${bar} ${cat.toUpperCase()} ${bar}\n`;
+        coms[cat].forEach((cmd) => {
+          out += `🔹 ${prefixe}${cmd}\n`;
+        });
+        out += `\n`;
+        i++;
+      }
+      return out;
+    },
+
+    // Command Center
+    (coms, prefixe) => {
+      let out = `🌟 *B.M.B COMMAND CENTER* 🌟\n\n`;
+      for (const cat in coms) {
+        out += `✨✨ ${cat} ✨✨\n`;
+        coms[cat].forEach((cmd) => {
+          out += `⭐ ${prefixe}${cmd}\n`;
+        });
+        out += `------------------\n`;
+      }
+      return out;
+    },
+
+    // Framed Header
+    (coms, prefixe) => {
+      let out = `========================\n     🔧 BMB MENU 🔧\n========================\n`;
+      for (const cat in coms) {
+        out += `\n[${cat.toUpperCase()}]\n`;
+        coms[cat].forEach((cmd) => {
+          out += `-> ${prefixe}${cmd}\n`;
+        });
+      }
+      return out;
     }
-  }
-};
-
-bmbtz({
-  nomCom: "menu",
-  categorie: "Menu"
-}, async (mek, sock, extra) => {
-
-  let {
-    ms,
-    repondre,
-    prefixe,
-    nomAuteurMessage,
-    mybotpic
-  } = extra;
-
-  let { cm } = require(__dirname + "/../devbmb/bmbtz");
-  let categories = {};
-  let mode = s.MODE.toLowerCase() !== "yes" ? "private" : "public";
-
-  // Group commands by category
-  cm.forEach(cmd => {
-    if (!categories[cmd.categorie]) categories[cmd.categorie] = [];
-    categories[cmd.categorie].push(cmd.nomCom);
-  });
-
-  moment.tz.setDefault("Etc/GMT");
-  const date = moment().format("DD/MM/YYYY");
-
-  // Menu layout functions (5 different styles)
-  const menuLayouts = [
-
-    // Layout 1: Vertical boxed style
-    () => {
-      let intro = `
-╔═⧉ 𝗕.𝗠.𝗕-𝗧𝗘𝗖𝗛 𝐁𝐎𝐓 ⧉═╗
-║👤 Owner: ${s.OWNER_NAME}
-║⚙️ Mode: ${mode}
-║📅 Date: ${date}
-║💻 Platform: ${os.platform()}
-║🧩 Commands: ${cm.length}
-╚════════════════════╝
-`;
-      let body = "";
-      for (const cat in categories) {
-        body += `\n╔═📁 ${cat.toUpperCase()} ═══\n`;
-        for (const cmdName of categories[cat]) {
-          body += `║ ▣ ${prefixe}${cmdName}\n`;
-        }
-        body += `╚════════════════════\n`;
-      }
-      body += "\n📌 @Bmb Tech";
-      return intro + body;
-    },
-
-    // Layout 2: Clean list with emoji
-    () => {
-      let intro = `*B.M.B-TECH MENU*\nOwner: ${s.OWNER_NAME}\nMode: ${mode}\nDate: ${date}\nPlatform: ${os.platform()}\nCommands: ${cm.length}\n\n`;
-      let body = "";
-      for (const cat in categories) {
-        body += `👉 *${cat.toUpperCase()}*\n`;
-        for (const cmdName of categories[cat]) {
-          body += ` • ${prefixe}${cmdName}\n`;
-        }
-        body += `\n`;
-      }
-      body += `*@Bmb Tech*`;
-      return intro + body;
-    },
-
-    // Layout 3: Dashboard style boxed categories
-    () => {
-      let intro = `
-╔═══════════════╗
-║🔥 𝗕.𝗠.𝗕-𝗧𝗘𝗖𝗛 𝗕𝗢𝗧 🔥
-╚═══════════════╝
-👑 Owner: ${s.OWNER_NAME}  
-🛠 Mode: ${mode}  
-💻 Platform: ${os.platform()}  
-📅 Date: ${date}  
-📊 Total Commands: ${cm.length}  
-`;
-      let body = "";
-      for (const cat in categories) {
-        body += `\n╔═📁 𝐌𝐄𝐍𝐔: ${cat.toUpperCase()} ═╗\n`;
-        for (const cmdName of categories[cat]) {
-          body += `║ ▣ ${prefixe}${cmdName}\n`;
-        }
-        body += `╚═════════════╝\n`;
-      }
-      body += `\n➤ ⚡ Powered by Bmb Tech`;
-      return intro + body;
-    },
-
-    // Layout 4: Compact list with dots
-    () => {
-      let intro = `B.M.B-TECH MENU | Owner: ${s.OWNER_NAME} | Mode: ${mode} | Date: ${date}\n\n`;
-      let body = "";
-      for (const cat in categories) {
-        body += `${cat.toUpperCase()}:\n`;
-        for (const cmdName of categories[cat]) {
-          body += ` • ${prefixe}${cmdName}\n`;
-        }
-        body += `\n`;
-      }
-      body += `Powered by Bmb Tech`;
-      return intro + body;
-    },
-
-    // Layout 5: Fancy with icons and separators
-    () => {
-      let intro = `╔═⧉ B.M.B-TECH BOT ⧉═╗\nOwner: ${s.OWNER_NAME} | Mode: ${mode} | Date: ${date}\nPlatform: ${os.platform()}\nCommands: ${cm.length}\n╚═══════════════════╝\n`;
-      let body = "";
-      for (const cat in categories) {
-        body += `\n╭───『 ✨ ${cat.toUpperCase()} ✨ 』───╮\n`;
-        for (const cmdName of categories[cat]) {
-          body += `│ • ${prefixe}${cmdName}\n`;
-        }
-        body += `╰────────────────────╯\n`;
-      }
-      body += `\nPowered by B.M.B TECH`;
-      return intro + body;
-    }
-
   ];
 
-  // Chagua random layout
-  const randomIndex = Math.floor(Math.random() * menuLayouts.length);
-  const selectedMenu = menuLayouts[randomIndex]();
+  // Chagua random style
+  const randomStyle = styles[Math.floor(Math.random() * styles.length)];
+  return randomStyle(coms, prefixe);
+}
+
+// ====== BOT INFO ======
+function getBotInfo(mode, totalCommands) {
+  moment.tz.setDefault("EAT");
+  const currentTime = moment().format("HH:mm:ss");
+  const currentDate = moment().format("DD/MM/YYYY");
+  const usedRAM = format(os.totalmem() - os.freemem());
+  const totalRAM = format(os.totalmem());
+
+  return `
+╭───「 *B.M.B-TECH* 」─────⊛
+┃⊛╭───────────────⊛
+┃⊛│☢️ *Mode*: ${mode.toUpperCase()}
+┃⊛│📅 *Date*: ${currentDate}
+┃⊛│⌚ *Time*: ${currentTime} (EAT)
+┃⊛│🖥️ *RAM*: ${usedRAM} / ${totalRAM}
+┃⊛│📦 *Commands*: ${totalCommands}
+┃⊛│✅ *Status*: ONLINE
+┃⊛│👑 *Creator* : Bmb Tech
+┃⊛│🌐 *website* : bmbtech.online
+┃⊛╰━━━━━━━━━━━━━━⊛
+╰━━━━━━━━━━━━━━━━━━━━⊛
+`;
+}
+
+// ====== SEND MENU MEDIA ======
+async function sendMenuMedia(zk, dest, ms, mediaUrl, caption, mentions) {
+  const contextInfo = {
+    forwardingScore: 999,
+    isForwarded: true,
+    mentionedJid: mentions,
+    forwardedNewsletterMessageInfo: {
+      newsletterJid: "120363382023564830@newsletter",
+      newsletterName: "𝙱.𝙼.𝙱-𝚇𝙼𝙳",
+      serverMessageId: 143,
+    },
+  };
+
+  if (mediaUrl.match(/\.(mp4|gif)$/i)) {
+    await zk.sendMessage(dest, {
+      video: { url: mediaUrl },
+      caption,
+      footer: "⚡ BMB-XBOT ⚡",
+      mentions,
+      gifPlayback: true,
+      contextInfo,
+    }, { quoted: ms });
+  } else if (mediaUrl.match(/\.(jpeg|jpg|png)$/i)) {
+    await zk.sendMessage(dest, {
+      image: { url: mediaUrl },
+      caption,
+      footer: "⚡ BMB-XBOT ⚡",
+      mentions,
+      contextInfo,
+    }, { quoted: ms });
+  } else {
+    await zk.sendMessage(dest, {
+      text: caption,
+      mentions,
+      contextInfo,
+    }, { quoted: ms });
+  }
+}
+
+// ====== MAIN COMMAND (menu) ======
+bmbtz({
+  nomCom: "menu",
+  categorie: "General",
+  reaction: "🌚",
+}, async (dest, zk, commandeOptions) => {
+  const { ms, repondre, prefixe } = commandeOptions;
+  const { cm } = require(__dirname + "/../devbmb/bmbtz");
+
+  let coms = {};
+  let mode = s.MODE.toLowerCase() !== "yes" ? "private" : "public";
+
+  for (const com of cm) {
+    if (!coms[com.categorie]) coms[com.categorie] = [];
+    coms[com.categorie].push(com.nomCom);
+  }
 
   try {
-    // Load images from /scs folder
+    const totalCommands = cm.length;
+    const infoText = getBotInfo(mode, totalCommands);
+    const menuText = buildMenu(coms, prefixe);
+    const finalText = infoText + menuText;
+    const sender = ms.key.participant || ms.key.remoteJid;
+
+    // Load all matching images from /scs folder
     const scsFolder = path.join(__dirname, "../scs");
     const images = fs.readdirSync(scsFolder).filter(f =>
       /^menu\d+\.(jpg|jpeg|png|mp4|gif)$/i.test(f)
     );
 
+    if (images.length === 0) return repondre("❌ No menu images found in /scs folder.");
+
+    // Choose random image for this menu
     const randomImage = images[Math.floor(Math.random() * images.length)];
-    const imagePath = path.join(scsFolder, randomImage);
-    const imageBuffer = fs.readFileSync(imagePath);
+    const mediaUrl = path.join(scsFolder, randomImage);
 
-    await sock.sendMessage(mek, {
-      text: selectedMenu,
-      contextInfo: {
-        mentionedJid: [mek.sender],
-        forwardingScore: 999,
-        isForwarded: true,
-        forwardedNewsletterMessageInfo: {
-          newsletterJid: "120363382023564830@newsletter",
-          newsletterName: "B.M.B-TECH",
-          serverMessageId: 143
-        },
-        thumbnail: imageBuffer
-      },
-      quoted: quotedContact
-    });
-
+    await sendMenuMedia(zk, dest, ms, mediaUrl, finalText, [sender]);
   } catch (err) {
-    console.error("Menu error: ", err);
-    repondre("Menu error: " + err);
+    console.error(`[DEBUG menu error]: ${err}`);
+    repondre(`❌ Failed to load menu:\n${err.message}`);
   }
 });
