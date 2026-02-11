@@ -64,7 +64,7 @@ function registerToggleCommand(commandName, settingKey, enabledValue, disabledVa
     }
 
     if (!arg[0]) {
-      const help = `👉 Usage:\n- Type: *${commandName} yes*  to enable\n- Type: *${commandName} no*   to disable`;
+      const help = `👉 Usage:\n- Type: *${commandName} on*  to enable\n- Type: *${commandName} off*   to disable`;
       return sendBox(chatId, zk, ms, title, help);
     }
 
@@ -72,18 +72,18 @@ function registerToggleCommand(commandName, settingKey, enabledValue, disabledVa
     let responseMessage;
 
     switch (option) {
-      case "yes":
+      case "on":
         s[settingKey] = enabledValue;
         responseMessage = enabledText || "has been enabled successfully.";
         break;
 
-      case "no":
+      case "off":
         s[settingKey] = disabledValue;
         responseMessage = disabledText || "has been disabled successfully.";
         break;
 
       default:
-        return sendBox(chatId, zk, ms, title, "❌ Invalid option.\nUse: *" + commandName + " yes* or *" + commandName + " no*.");
+        return sendBox(chatId, zk, ms, title, "❌ Invalid option.\nUse: *" + commandName + " on* or *" + commandName + " off*.");
     }
 
     return sendBox(chatId, zk, ms, title, responseMessage);
@@ -96,8 +96,8 @@ function registerToggleCommand(commandName, settingKey, enabledValue, disabledVa
 registerToggleCommand(
   "anticall",
   "ANTICALL",
-  "yes",
-  "no",
+  "on",
+  "off",
   "ANTI-CALL MODE",
   "✅ Anti-call has been *enabled* successfully.",
   "❌ Anti-call has been *disabled* successfully."
@@ -107,8 +107,8 @@ registerToggleCommand(
 registerToggleCommand(
   "autoreact",
   "AUTO_REACT",
-  "yes",
-  "no",
+  "on",
+  "off",
   "AUTO-REACT",
   "✅ Auto-react has been *enabled* successfully.",
   "❌ Auto-react has been *disabled* successfully."
@@ -118,8 +118,8 @@ registerToggleCommand(
 registerToggleCommand(
   "readstatus",
   "AUTO_READ_STATUS",
-  "yes",
-  "no",
+  "on",
+  "off",
   "AUTO-READ STATUS",
   "✅ Auto-read status has been *enabled* successfully.",
   "❌ Auto-read status has been *disabled* successfully."
@@ -129,8 +129,8 @@ registerToggleCommand(
 registerToggleCommand(
   "antidelete",
   "ADM",
-  "yes",
-  "no",
+  "on",
+  "off",
   "ANTI-DELETE MODE",
   "✅ Anti-delete has been *enabled* successfully.",
   "❌ Anti-delete has been *disabled* successfully."
@@ -140,8 +140,8 @@ registerToggleCommand(
 registerToggleCommand(
   "downloadstatus",
   "AUTO_DOWNLOAD_STATUS",
-  "yes",
-  "no",
+  "on",
+  "off",
   "DOWNLOAD STATUS",
   "✅ Auto-download status has been *enabled* successfully.",
   "❌ Auto-download status has been *disabled* successfully."
@@ -151,8 +151,8 @@ registerToggleCommand(
 registerToggleCommand(
   "startmessage",
   "DP",
-  "yes",
-  "no",
+  "on",
+  "off",
   "START MESSAGE",
   "✅ Start message has been *enabled* successfully.",
   "❌ Start message has been *disabled* successfully."
@@ -162,8 +162,8 @@ registerToggleCommand(
 registerToggleCommand(
   "readmessage",
   "AUTO_READ_MESSAGES",
-  "yes",
-  "no",
+  "on",
+  "off",
   "AUTO-READ MESSAGES",
   "✅ Auto-read messages has been *enabled* successfully.",
   "❌ Auto-read messages has been *disabled* successfully."
@@ -173,8 +173,8 @@ registerToggleCommand(
 registerToggleCommand(
   "pm-permit",
   "PM_PERMIT",
-  "yes",
-  "no",
+  "on",
+  "off",
   "PM PERMIT",
   "✅ PM permit has been *enabled* successfully.",
   "❌ PM permit has been *disabled* successfully."
@@ -184,8 +184,8 @@ registerToggleCommand(
 registerToggleCommand(
   "greet",
   "AUTO_REPLY",
-  "yes",
-  "no",
+  "on",
+  "off",
   "GREET / AUTO-REPLY",
   "✅ Auto-reply (greet) has been *enabled* successfully.",
   "❌ Auto-reply (greet) has been *disabled* successfully."
@@ -195,8 +195,8 @@ registerToggleCommand(
 registerToggleCommand(
   "publicmode",
   "MODE",
-  "yes",
-  "no",
+  "on",
+  "off",
   "PUBLIC MODE",
   "✅ Public mode has been *enabled* successfully.",
   "❌ Public mode has been *disabled* successfully."
@@ -207,7 +207,7 @@ registerToggleCommand(
   "autorecord",
   "ETAT",
   "3",
-  "no",
+  "off",
   "AUTO-RECORD",
   "✅ Auto-record has been *enabled* successfully.",
   "❌ Auto-record has been *disabled* successfully."
@@ -218,7 +218,7 @@ registerToggleCommand(
   "autotyping",
   "ETAT",
   "2",
-  "no",
+  "off",
   "AUTO-TYPING",
   "✅ Auto-typing has been *enabled* successfully.",
   "❌ Auto-typing has been *disabled* successfully."
@@ -229,18 +229,18 @@ registerToggleCommand(
   "alwaysonline",
   "ETAT",
   "1",
-  "no",
+  "off",
   "ALWAYS ONLINE",
   "✅ Always-online has been *enabled* successfully.",
   "❌ Always-online has been *disabled* successfully."
 );
 
-// privatemode (flipped: enabling private sets MODE to 'no', disabling sets 'yes' = public)
+// privatemode (flipped: enabling private sets MODE to 'off', disabling sets 'on' = public)
 registerToggleCommand(
   "privatemode",
   "MODE",
-  "no",
-  "yes",
+  "off",
+  "on",
   "PRIVATE MODE",
   "✅ Private mode has been *enabled* successfully.",
   "❌ Private mode has been *disabled* successfully."
@@ -250,8 +250,8 @@ registerToggleCommand(
 registerToggleCommand(
   "autolikestatus",
   "AUTO_LIKE_STATUS",
-  "yes",
-  "no",
+  "on",
+  "off",
   "AUTO-LIKE STATUS",
   "✅ Auto-like status has been *enabled* successfully.",
   "❌ Auto-like status has been *disabled* successfully."
@@ -261,8 +261,8 @@ registerToggleCommand(
 registerToggleCommand(
   "chatbot",
   "CHATBOT",
-  "yes",
-  "no",
+  "on",
+  "off",
   "CHATBOT",
   "✅ Chatbot has been *enabled* successfully.",
   "❌ Chatbot has been *disabled* successfully."
