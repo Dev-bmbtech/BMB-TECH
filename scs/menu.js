@@ -15,11 +15,11 @@ function buildMenu(coms, prefixe) {
     (coms, prefixe) => {
       let out = `📋 *B.M.B MENU*\n`;
       for (const cat in coms) {
-        out += `\n╔═══════ ${cat.toUpperCase()} ═══════╗\n`;
+        out += `\n╔════ ${cat.toUpperCase()} ════╗\n`;
         coms[cat].forEach((cmd) => {
           out += `║ ⚙️ ${prefixe}${cmd}\n`;
         });
-        out += `╚════════════════════════╝\n`;
+        out += `╚═══════════╝\n`;
       }
       return out;
     },
@@ -55,11 +55,11 @@ function buildMenu(coms, prefixe) {
 
     // Command Center
     (coms, prefixe) => {
-      let out = `🌟 *B.M.B COMMAND CENTER* 🌟\n\n`;
+      let out = `🔁 *B.M.B COMMAND CENTER* 🔁\n\n`;
       for (const cat in coms) {
-        out += `✨✨ ${cat} ✨✨\n`;
+        out += `👑👑 ${cat} 👑👑\n`;
         coms[cat].forEach((cmd) => {
-          out += `⭐ ${prefixe}${cmd}\n`;
+          out += `↔️ ${prefixe}${cmd}\n`;
         });
         out += `------------------\n`;
       }
@@ -68,7 +68,7 @@ function buildMenu(coms, prefixe) {
 
     // Framed Header
     (coms, prefixe) => {
-      let out = `========================\n     🔧 BMB MENU 🔧\n========================\n`;
+      let out = `================\n     🔧 BMB MENU 🔧\n===============\n`;
       for (const cat in coms) {
         out += `\n[${cat.toUpperCase()}]\n`;
         coms[cat].forEach((cmd) => {
