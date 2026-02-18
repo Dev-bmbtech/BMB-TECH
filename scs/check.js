@@ -47,7 +47,7 @@ bmbtz({
     if (!code) return repondre("❌ Please provide a country code. Example: `.check 255`");
     code = code.replace(/\+/g, '');
 
-    const url = "https://country-code-1-hmla.onrender.com/countries";
+    const url = "https://bmb-countries-api.vercel.app/api";
     const { data } = await axios.get(url);
 
     const matches = data.filter(c => c.calling_code === code);
