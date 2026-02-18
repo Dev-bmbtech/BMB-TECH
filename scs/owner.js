@@ -3,66 +3,74 @@ const { getAllSudoNumbers, isSudoTableNotEmpty } = require("../lib/sudo");
 const conf = require("../settings");
 
 bmbtz(
-  { 
-    nomCom: "owner", 
-    categorie: "General", 
-    reaction: "🔁" 
-  }, 
+  {
+    nomCom: "owner",
+    categorie: "General",
+    reaction: "👑",
+  },
   async (dest, zk, commandeOptions) => {
     const { ms, mybotpic } = commandeOptions;
+
+    const cleanOwner = conf.NUMERO_OWNER.replace(/[^0-9]/g, "");
+    const ownerJid = `${cleanOwner}@s.whatsapp.net`;
+
+    /* ================================================= */
+    /* OPTION 1 — SEND CONTACT (VIEW CONTACT STYLE)     */
+    /* ================================================= */
+
+    const vcard = [
+      "BEGIN:VCARD",
+      "VERSION:3.0",
+      `FN:${conf.OWNER_NAME}`,
+      "ORG:BMB-XMD;",
+      `TEL;type=CELL;type=VOICE;waid=${cleanOwner}:+${cleanOwner}`,
+      "END:VCARD",
+    ].join("\n");
+
+    await zk.sendMessage(
+      dest,
+      {
+        contacts: {
+          displayName: conf.OWNER_NAME,
+          contacts: [{ vcard }],
+        },
+      },
+      { quoted: ms }
+    );
+
+    /* ================================================= */
+    /* OPTION 2 — SEND DETAILS + IMAGE + MENTIONS       */
+    /* ================================================= */
+
+    let caption = `👑 *BMB-XMD OWNER INFORMATION*\n`;
+    caption += `━━━━━━━━━━━━━━━━━━\n`;
+    caption += `📛 *Name:* Bmb Tech\n`;
+    caption += `📞 *Number:* +254769529791\n`;
+    caption += `⚙️ *Role:* Developer & Founder\n`;
+    caption += `📦 *Edition:* Bmb Tech bot Version\n\n`;
+
+    const mentionedJids = [ownerJid];
+
     const hasSudoUsers = await isSudoTableNotEmpty();
-    const ownerJid = `${conf.NUMERO_OWNER.replace(/[^0-9]/g, '')}@s.whatsapp.net`;
 
     if (hasSudoUsers) {
-      let message = `*My Super-User*\n\n*Owner Number*\n: - 🌚 @${conf.NUMERO_OWNER}\n\n------ *Other Sudo Users* -----\n`;
+      caption += `💼 *Other Sudo Users:*\n`;
 
       const sudoNumbers = await getAllSudoNumbers();
-      const mentionedJids = [ownerJid];
 
       for (const sudo of sudoNumbers) {
-        if (sudo) { // Strict check to exclude empty or undefined values
-          const sanitizedSudo = sudo.replace(/[^0-9]/g, '');
-          message += `- 💼 @${sanitizedSudo}\n`;
-          mentionedJids.push(`${sanitizedSudo}@s.whatsapp.net`);
+        if (sudo) {
+          const cleanSudo = sudo.replace(/[^0-9]/g, "");
+          caption += `- @${cleanSudo}\n`;
+          mentionedJids.push(`${cleanSudo}@s.whatsapp.net`);
         }
       }
-
-      zk.sendMessage(dest, {
-        image: { url: mybotpic() },
-        caption: message,
-        mentions: mentionedJids,
-      });
-    } else {
-      const vcard = [
-        'BEGIN:VCARD',
-        'VERSION:3.0',
-        `FN:${conf.OWNER_NAME}`,
-        'ORG:;',
-        `TEL;type=CELL;type=VOICE;waid=${conf.NUMERO_OWNER}:+${conf.NUMERO_OWNER}`,
-        'END:VCARD',
-      ].join('\n');
-
-      const buttonMessage = {
-        contacts: { 
-          displayName: conf.OWNER_NAME, 
-          contacts: [{ vcard }] 
-        },
-        contextInfo: {
-          externalAdReply: {
-            title: conf.NUMERO_OWNER,
-            body: 'Touch here.',
-            renderLargerThumbnail: true,
-            thumbnail: { url: mybotpic() },
-            mediaType: 1,
-            sourceUrl: `https://wa.me/+${conf.NUMERO_OWNER}?text=Hii+bro,I+need+BELTAH+MD+Bot`,
-          },
-        },
-      };
-
-      return zk.sendMessage(dest, buttonMessage, { quoted: ms });
     }
+
+    await zk.sendMessage(dest, {
+      image: { url: mybotpic() },
+      caption: caption,
+      mentions: mentionedJids,
+    });
   }
 );
-
-// Remove commented-out legacy or test code for cleanliness
-          
