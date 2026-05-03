@@ -71,16 +71,6 @@
       "value": "2",
       "required": false
     },
-    "ANTIDELETE_PUBLIC": {
-      "description": "Show deleted messages publicly in chat (on = show to everyone, off = disabled)",
-      "value": "off",
-      "required": false
-    },
-    "ANTIDELETE_DM": {
-      "description": "Forward deleted messages to bot owner in DM (on = send to owner, off = disabled)",
-      "value": "off",
-      "required": false
-    },
     "AUTO_BIO": {
       "description": "Enable automatic bio update (on = active, off = deactive)",
       "value": "on",
