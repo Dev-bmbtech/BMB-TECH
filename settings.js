@@ -12,7 +12,7 @@ module.exports = {
     session: process.env.SESSION_ID || '',
     PREFIXE: process.env.PREFIX || ".",
     OWNER_NAME: process.env.OWNER_NAME || "𝐛𝐦𝐛 𝐭𝐞𝐜𝐡",
-    NUMERO_OWNER : process.env.NUMERO_OWNER || "254769529791",              
+    NUMERO_OWNER : process.env.NUMERO_OWNER || "255767862457",              
     AUTO_READ_STATUS: process.env.AUTO_READ_STATUS || "on",
     AUTO_DOWNLOAD_STATUS: process.env.AUTO_DOWNLOAD_STATUS || 'off',
     BOT : process.env.BOT_NAME || '𝐛𝐦𝐛 𝐭𝐞𝐜𝐡',
@@ -26,11 +26,8 @@ module.exports = {
     ANTICALL : process.env.ANTICALL || 'on',   
     AUTO_BIO : process.env.AUTO_BIO || 'on',               
     DP : process.env.STARTING_BOT_MESSAGE || "on",
-    ANTIDELETE_PUBLIC: process.env.ANTIDELETE_PUBLIC || "on",
-    ANTIDELETE_DM: process.env.ANTIDELETE_DM || "on",
     AUTO_REACT_STATUS : process.env.AUTO_REACT_STATUS || 'on',
     AUTO_READ : process.env.AUTO_READ || 'on',
-    CHATBOT: process.env.CHATBOT || 'off',
     DATABASE_URL,
     DATABASE: DATABASE_URL === databasePath
         ? "postgresql://postgres:bKlIqoOUWFIHOAhKxRWQtGfKfhGKgmRX@viaduct.proxy.rlwy.net:47738/railway"
