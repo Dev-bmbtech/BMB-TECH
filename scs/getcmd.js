@@ -3,7 +3,6 @@ const pkg = require("@whiskeysockets/baileys");
 const { generateWAMessageFromContent, proto } = pkg;
 const fs = require("fs-extra");
 const path = require("path");
-const conf = require("../settings");
 
 bmbtz({
   nomCom: "getcmd",
@@ -12,17 +11,6 @@ bmbtz({
   desc: "Get command file information and code"
 }, async (dest, zk, commandeOptions) => {
   const { repondre, arg, ms } = commandeOptions;
-
-  // ===== OWNER RESTRICTION =====
-  const cleanOwner = conf.NUMERO_OWNER.replace(/[^0-9]/g, "");
-  const ownerJid = `${cleanOwner}@s.whatsapp.net`;
-  
-  const sender = ms.key.remoteJid || ms.key.participant;
-  
-  // Check if sender is owner
-  if (sender !== ownerJid && sender !== `${cleanOwner}@s.whatsapp.net`) {
-    return repondre("❌ Access Denied. This command is restricted to the bot owner.");
-  }
 
   if (!arg || arg.length === 0) {
     return repondre(`❌ Usage: .getcmd <command-name>\n\nExample: .getcmd npm`);
