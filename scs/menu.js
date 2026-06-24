@@ -76,7 +76,7 @@ function getBotInfo(mode, totalCommands) {
 
 // ====== MAIN COMMAND ======
 bmbtz({
-  nomCom: "cmd",
+  nomCom: "menu",
   categorie: "General",
   reaction: "🌚",
 }, async (dest, zk, commandeOptions) => {
