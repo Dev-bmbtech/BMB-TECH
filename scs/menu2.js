@@ -7,7 +7,7 @@ const moment = require("moment-timezone");
 const { format } = require(__dirname + "/../devbmb/mesfonctions");
 const s = require(__dirname + "/../settings");
 
-// ====== CONTACT QUOTE ======
+// ====== CONTACT QUOTE (KAMA YA VIDEO LOGO) ======
 const quotedContact = {
   key: {
     fromMe: false,
@@ -28,7 +28,7 @@ const quotedContact = {
   }
 };
 
-// ====== CONTEXT INFO ======
+// ====== CONTEXT INFO (KAMA YA VIDEO LOGO) ======
 const contextInfo = {
   forwardingScore: 999,
   isForwarded: true,
@@ -55,7 +55,8 @@ function getBotInfo(mode, totalCommands) {
   const usedRAM = format(os.totalmem() - os.freemem());
   const totalRAM = format(os.totalmem());
 
-  return `╭───「 *B.M.B-TECH* 」─────⊛
+  return `
+╭───「 *B.M.B-TECH* 」─────⊛
 ┃⊛╭───────────────⊛
 ┃⊛│☢️ *Mode*: ${mode.toUpperCase()}
 ┃⊛│📅 *Date*: ${currentDate}
@@ -66,7 +67,8 @@ function getBotInfo(mode, totalCommands) {
 ┃⊛│👑 *Creator* : Bmb Tech
 ┃⊛│🌐 *website* : bmbtech.online
 ┃⊛╰━━━━━━━━━━━━━━⊛
-╰━━━━━━━━━━━━━━━━━━━━⊛`;
+╰━━━━━━━━━━━━━━━━━━━━⊛
+`;
 }
 
 // ====== MAIN COMMAND ======
@@ -90,16 +92,7 @@ bmbtz({
   const categories = Object.keys(coms);
   const totalCommands = cm.length;
 
-  // ====== BOT INFO ======
-  const botInfo = getBotInfo(mode, totalCommands);
-
-  // ====== SEND BOT INFO ======
-  await zk.sendMessage(dest, {
-    text: botInfo,
-    contextInfo,
-  }, { quoted: quotedContact });
-
-  // ====== BUILD MENU OPTIONS ======
+  // ====== BUILD OPTIONS TEXT ======
   let optionsText = `📑 *BMB TOOL MENU*\n\n`;
   optionsText += `Reply with category number:\n\n`;
   
@@ -109,16 +102,16 @@ bmbtz({
   
   optionsText += `\n*Send number (1-${categories.length})*`;
 
-  // ====== SEND MENU OPTIONS ======
+  // ====== SEND OPTIONS (KAMA YA VIDEO LOGO) ======
   const sentMessage = await zk.sendMessage(dest, {
     text: optionsText,
+    contextInfo,
   }, { quoted: quotedContact });
 
-  // ====== LISTENER (FAST REPLY KAMA VIDEO LOGO) ======
+  // ====== LISTENER (KAMA YA VIDEO LOGO) ======
   zk.ev.on('messages.upsert', async (update) => {
     const message = update.messages[0];
     if (!message.message || !message.message.extendedTextMessage) return;
-    if (message.key.fromMe) return;
 
     // Check if replying to menu options
     if (message.message.extendedTextMessage.contextInfo?.stanzaId !== sentMessage.key.id) return;
@@ -133,7 +126,7 @@ bmbtz({
     }
 
     try {
-      // ====== REACT TO USER (FAST) ======
+      // ====== REACT TO USER ======
       await zk.sendMessage(message.key.remoteJid, {
         react: { text: "⏳", key: message.key }
       });
@@ -147,12 +140,16 @@ bmbtz({
         menuText += `🔹 *${prefixe}${cmd}\n`;
       });
 
-      // ====== SEND CATEGORY MENU (FAST) ======
+      const infoText = getBotInfo(mode, totalCommands);
+      const finalText = infoText + menuText;
+
+      // ====== SEND MENU ======
       await zk.sendMessage(dest, {
-        text: menuText,
+        text: finalText,
+        contextInfo,
       }, { quoted: ms });
 
-      // ====== REACT SUCCESS (FAST) ======
+      // ====== REACT SUCCESS ======
       await zk.sendMessage(message.key.remoteJid, {
         react: { text: "✅", key: message.key }
       });
