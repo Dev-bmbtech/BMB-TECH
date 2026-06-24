@@ -31,29 +31,17 @@ bmbtz({
     const data = response.data;
     const latestVersion = data["dist-tags"]?.latest || "N/A";
     const description = data.description || "No description available";
-    const license = data.license || "N/A";
     const repository = data.repository?.url || "N/A";
     const homepage = data.homepage || "N/A";
-    const author = data.author?.name || data.author || "N/A";
-    const keywords = data.keywords?.join(", ") || "N/A";
-    const totalDownloads = await getTotalDownloads(packageName);
 
-    // Build response message
+    // Build response message - using emojis only, no box lines
     const responseText = `
-╭───「 *NPM PACKAGE* 」─────⊛
-┃⊛╭───────────────────⊛
-┃⊛│📦 *Package:* ${packageName}
-┃⊛│📝 *Description:* ${description}
-┃⊛│🏷️ *Version:* ${latestVersion}
-┃⊛│📄 *License:* ${license}
-┃⊛│👤 *Author:* ${author}
-┃⊛│📥 *Downloads:* ${totalDownloads.toLocaleString()}/month
-┃⊛│🔑 *Keywords:* ${keywords}
-┃⊛│📂 *Repository:* ${repository}
-┃⊛│🌐 *Homepage:* ${homepage}
-┃⊛│🔗 *NPM URL:* https://www.npmjs.com/package/${packageName}
-┃⊛╰───────────────────⊛
-╰──────────────────────────⊛
+📦 *NPM PACKAGE:* ${packageName}
+📝 *Description:* ${description}
+🏷️ *Version:* ${latestVersion}
+📂 *Repository:* ${repository}
+🌐 *Homepage:* ${homepage}
+🔗 *NPM URL:* https://www.npmjs.com/package/${packageName}
     `;
 
     // Send the response
@@ -87,15 +75,3 @@ bmbtz({
     }
   }
 });
-
-// Helper function to get total downloads
-async function getTotalDownloads(packageName) {
-  try {
-    const response = await axios.get(`https://api.npmjs.org/downloads/point/last-month/${packageName}`, {
-      timeout: 5000
-    });
-    return response.data.downloads || 0;
-  } catch (error) {
-    return 0;
-  }
-}
