@@ -1,78 +1,162 @@
 const { bmbtz } = require("../devbmb/bmbtz");
-const speed = require("performance-now");
+const fs = require("fs-extra");
+const path = require("path");
+const moment = require("moment-timezone");
+const os = require("os");
+const { exec } = require("child_process");
+const util = require("util");
+const execPromise = util.promisify(exec);
 
-// Function for delay simulation
-function delay(ms) {
-  console.log(`⏱️ delay for ${ms}ms`);
-  return new Promise(resolve => setTimeout(resolve, ms));
+// Function to get last commit date
+async function getLastCommitDate() {
+  try {
+    const { stdout } = await execPromise('git log -1 --format=%cd --date=iso');
+    return stdout.trim();
+  } catch (error) {
+    return "Unknown";
+  }
 }
 
-// Helper function to safely get the sender's name
-function getName(dest, commandeOptions) {
-  return (
-    commandeOptions.pushName ||
-    commandeOptions.name ||
-    (dest.sender ? dest.sender.split('@')[0] : "Unknown User")
-  );
+// Function to get last commit message
+async function getLastCommitMessage() {
+  try {
+    const { stdout } = await execPromise('git log -1 --format=%s');
+    return stdout.trim();
+  } catch (error) {
+    return "No updates";
+  }
 }
 
-// Command: Uptime
+// Function to get current branch
+async function getCurrentBranch() {
+  try {
+    const { stdout } = await execPromise('git rev-parse --abbrev-ref HEAD');
+    return stdout.trim();
+  } catch (error) {
+    return "main";
+  }
+}
+
+// Function to get repo URL
+async function getRepoURL() {
+  try {
+    const { stdout } = await execPromise('git config --get remote.origin.url');
+    return stdout.trim().replace('.git', '');
+  } catch (error) {
+    return "https://github.com/Dev-bmbtech/BMB-TECH";
+  }
+}
+
+// Function to get commit count
+async function getCommitCount() {
+  try {
+    const { stdout } = await execPromise('git rev-list --count HEAD');
+    return stdout.trim();
+  } catch (error) {
+    return "Unknown";
+  }
+}
+
 bmbtz(
   {
     nomCom: 'uptime',
-    desc: 'To check runtime',
-    Categorie: 'General',
-    reaction: '⌚',
-    fromMe: 'true',
+    desc: 'Check bot runtime and system status',
+    categorie: 'General',
+    reaction: '⌚'
   },
   async (dest, zk, commandeOptions) => {
-    const name = getName(dest, commandeOptions);
-    const runtime = process.uptime();
-    const formattedRuntime = new Date(runtime * 1000).toISOString().substr(11, 8);
-    const img = 'https://files.catbox.moe/45qleo.jpg';
-    const murl = 'https://whatsapp.com/channel/0029VawO6hgF6sn7k3SuVU3z';
+    const { repondre, ms } = commandeOptions;
 
-    // Constructing the contact message
-    const con = {
-      key: {
-        fromMe: false,
-        participant: `${dest.sender ? dest.sender.split('@')[0] : "unknown"}@s.whatsapp.net`,
-        ...(dest.chat ? { remoteJid: dest.chat } : {}),
-      },
-      message: {
-        contactMessage: {
-          displayName: name,
-          vcard: `BEGIN:VCARD\nVERSION:3.0\nFN:${name}\nitem1.TEL;waid=${
-            dest.sender ? dest.sender.split('@')[0] : "unknown"
-          }:${
-            dest.sender ? dest.sender.split('@')[0] : "unknown"
-          }\nitem1.X-ABLabel:Mobile\nEND:VCARD`,
-        },
-      },
-    };
+    try {
+      await zk.sendMessage(dest, {
+        react: { text: "⏳", key: ms.key }
+      });
 
-    // Reply with uptime
-    await zk.sendMessage(dest, {
-      text: `*Bmb Tech Uptime* 🕒\n\nRuntime: ${formattedRuntime}`,
-      contextInfo: {
-        mentionedJid: [dest.sender || ""],
-        externalAdReply: {
-          title: "Bmb Tech - System Uptime",
-          body: `Bot has been running for: ${formattedRuntime}`,
-          thumbnailUrl: img,
-          sourceUrl: murl,
-          mediaType: 1,
-          renderLargerThumbnail: true,
-        },
-      },
-      quoted: con,
-    });
+      // Get system info
+      const runtime = process.uptime();
+      const days = Math.floor(runtime / 86400);
+      const hours = Math.floor((runtime % 86400) / 3600);
+      const minutes = Math.floor((runtime % 3600) / 60);
+      const seconds = Math.floor(runtime % 60);
+      
+      const formattedRuntime = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+      
+      // Get memory info
+      const totalMemory = (os.totalmem() / (1024 * 1024 * 1024)).toFixed(2);
+      const freeMemory = (os.freemem() / (1024 * 1024 * 1024)).toFixed(2);
+      const usedMemory = (totalMemory - freeMemory).toFixed(2);
+      const memoryPercent = ((usedMemory / totalMemory) * 100).toFixed(1);
+      
+      // Get CPU info
+      const cpuCores = os.cpus().length;
+      const cpuModel = os.cpus()[0]?.model || "Unknown";
+      const loadAvg = os.loadavg();
+      
+      // Get time
+      moment.tz.setDefault("Africa/Nairobi");
+      const currentTime = moment().format("HH:mm:ss");
+      const currentDate = moment().format("DD/MM/YYYY");
+      
+      // Get repo info
+      const branch = await getCurrentBranch();
+      const lastCommitDate = await getLastCommitDate();
+      const lastCommitMsg = await getLastCommitMessage();
+      const repoUrl = await getRepoURL();
+      const commitCount = await getCommitCount();
+      
+      // Get platform
+      const platform = os.platform();
+      const hostname = os.hostname();
 
-    console.log("Uptime sent successfully with verified tick!");
+      // Build message
+      const message = `⌚ *BMB-TECH SYSTEM STATUS*
+
+📅 *Date:* ${currentDate}
+🕐 *Time:* ${currentTime} (EAT)
+⏱️ *Uptime:* ${formattedRuntime}
+
+💻 *System Info*
+├─ 🖥️ *OS:* ${platform} (${hostname})
+├─ 🔧 *CPU:* ${cpuModel} (${cpuCores} cores)
+├─ 📊 *Load:* ${loadAvg[0].toFixed(2)} / ${loadAvg[1].toFixed(2)} / ${loadAvg[2].toFixed(2)}
+└─ 🧠 *RAM:* ${usedMemory}GB / ${totalMemory}GB (${memoryPercent}% used)
+
+📦 *Repository Info*
+├─ 🌿 *Branch:* ${branch}
+├─ 🔗 *Repo:* ${repoUrl}
+├─ 📊 *Commits:* ${commitCount}
+├─ 📝 *Last Update:* ${lastCommitDate}
+└─ 💬 *Commit:* ${lastCommitMsg}
+
+🔧 *Bot Status*
+├─ ✅ *Status:* ONLINE
+├─ 📦 *Commands:* ${Object.keys(require("../devbmb/bmbtz").cm || {}).length || 'Loading...'}
+└─ 👑 *Developer:* Bmb Tech
+
+━━━━━━━━━━━━━━━━
+© B.M.B-TECH`;
+
+      // Send message
+      await zk.sendMessage(dest, {
+        text: message,
+        contextInfo: {
+          forwardingScore: 999,
+          isForwarded: true,
+          forwardedNewsletterMessageInfo: {
+            newsletterJid: "120363382023564830@newsletter",
+            newsletterName: "𝙱.𝙼.𝙱-𝚇𝙼𝙳",
+            serverMessageId: 1
+          }
+        }
+      }, { quoted: ms });
+
+      await zk.sendMessage(dest, {
+        react: { text: "✅", key: ms.key }
+      });
+
+    } catch (error) {
+      console.error("Uptime Error:", error);
+      await repondre(`❌ Error: ${error.message}`);
+    }
   }
 );
-
-module.exports = {
-  delay,
-};
-        
