@@ -28,7 +28,7 @@ const quotedContact = {
   }
 };
 
-// ====== CONTEXT INFO ======
+// ====== CONTEXT INFO (KWA BOT INFO TU) ======
 const contextInfo = {
   forwardingScore: 999,
   isForwarded: true,
@@ -55,8 +55,7 @@ function getBotInfo(mode, totalCommands) {
   const usedRAM = format(os.totalmem() - os.freemem());
   const totalRAM = format(os.totalmem());
 
-  return `
-╭───「 *B.M.B-TECH* 」─────⊛
+  return `╭───「 *B.M.B-TECH* 」─────⊛
 ┃⊛╭───────────────⊛
 ┃⊛│☢️ *Mode*: ${mode.toUpperCase()}
 ┃⊛│📅 *Date*: ${currentDate}
@@ -67,8 +66,7 @@ function getBotInfo(mode, totalCommands) {
 ┃⊛│👑 *Creator* : Bmb Tech
 ┃⊛│🌐 *website* : bmbtech.online
 ┃⊛╰━━━━━━━━━━━━━━⊛
-╰━━━━━━━━━━━━━━━━━━━━⊛
-`;
+╰━━━━━━━━━━━━━━━━━━━━⊛`;
 }
 
 // ====== MAIN COMMAND ======
@@ -92,11 +90,17 @@ bmbtz({
   const categories = Object.keys(coms);
   const totalCommands = cm.length;
 
-  // ====== BUILD MAIN MENU WITH BOT INFO ======
+  // ====== BOT INFO ======
   const botInfo = getBotInfo(mode, totalCommands);
-  
-  let optionsText = botInfo; // ← Info ya bot inaongezwa hapa
-  optionsText += `📑 *BMB TOOL MENU*\n\n`;
+
+  // ====== SEND BOT INFO (NA CONTEXTINFO) ======
+  await zk.sendMessage(dest, {
+    text: botInfo,
+    contextInfo, // ← HII INA VIEW CHANNEL
+  }, { quoted: quotedContact });
+
+  // ====== BUILD MENU OPTIONS ======
+  let optionsText = `📑 *BMB TOOL MENU*\n\n`;
   optionsText += `Reply with category number:\n\n`;
   
   categories.forEach((cat, index) => {
@@ -105,10 +109,10 @@ bmbtz({
   
   optionsText += `\n*Send number (1-${categories.length})*`;
 
-  // ====== SEND MAIN MENU ======
+  // ====== SEND MENU OPTIONS (BILA CONTEXTINFO) ======
   const sentMessage = await zk.sendMessage(dest, {
     text: optionsText,
-    contextInfo,
+    // contextInfo imeondolewa! ← HAKUNA VIEW CHANNEL
   }, { quoted: quotedContact });
 
   // ====== LISTENER ======
@@ -128,7 +132,6 @@ bmbtz({
     }
 
     try {
-      // ====== REACT TO USER ======
       await zk.sendMessage(message.key.remoteJid, {
         react: { text: "⏳", key: message.key }
       });
@@ -136,19 +139,16 @@ bmbtz({
       const selectedCategory = categories[categoryIndex];
       const commands = coms[selectedCategory];
 
-      // ====== BUILD CATEGORY MENU (BOT INFO IMEONDOKA) ======
       let menuText = `📂 *${selectedCategory.toUpperCase()}*\n\n`;
       commands.forEach((cmd) => {
         menuText += `🔹 *${prefixe}${cmd}\n`;
       });
 
-      // ====== SEND CATEGORY MENU WITHOUT BOT INFO ======
       await zk.sendMessage(dest, {
-        text: menuText, // ← Hakuna bot info hapa!
-        contextInfo,
+        text: menuText,
+        // contextInfo imeondolewa! ← HAKUNA VIEW CHANNEL
       }, { quoted: ms });
 
-      // ====== REACT SUCCESS ======
       await zk.sendMessage(message.key.remoteJid, {
         react: { text: "✅", key: message.key }
       });
