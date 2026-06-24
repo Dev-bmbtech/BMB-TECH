@@ -1,36 +1,16 @@
 const { bmbtz } = require("../devbmb/bmbtz");
 const pkg = require("@whiskeysockets/baileys");
 const { generateWAMessageFromContent, proto } = pkg;
-const fs = require("fs-extra");
 const axios = require("axios");
-const FormData = require("form-data");
+const FormData = require('form-data');
+const fs = require("fs-extra");
+const path = require("path");
 
-/* ===== BMB API CONFIG ===== */
 const BMB_API = 'https://url.bmbxmd.workers.dev/api/upload';
 
-/* ===== QUOTED CONTACT ===== */
-const quotedContact = {
-  key: {
-    fromMe: false,
-    participant: "0@s.whatsapp.net",
-    remoteJid: "status@broadcast"
-  },
-  message: {
-    contactMessage: {
-      displayName: "B.M.B TECH VERIFIED ✅",
-      vcard: `BEGIN:VCARD
-VERSION:3.0
-FN:B.M.B TECH VERIFIED ✅
-ORG:BMB-TECH BOT;
-TEL;type=CELL;type=VOICE;waid=255767862457:+255767862457
-END:VCARD`
-    }
-  }
-};
-
-/* ===== GENERATE SHORT ID ===== */
+// Function to generate random 6 characters (A-Z, 0-9)
 function generateShortId(length = 6) {
-    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     let result = '';
     for (let i = 0; i < length; i++) {
         result += chars.charAt(Math.floor(Math.random() * chars.length));
@@ -38,187 +18,163 @@ function generateShortId(length = 6) {
     return result;
 }
 
-/* ===== UPLOAD TO BMB API ===== */
-async function uploadToBMB(mediaBuffer, mimeType) {
-    if (!mediaBuffer) throw new Error("No media buffer provided");
+bmbtz({
+  nomCom: "url",
+  categorie: "Utility",
+  reaction: "🖇",
+  desc: "Convert media to BMB URL"
+}, async (dest, zk, commandeOptions) => {
+  const { repondre, msgRepondu, ms } = commandeOptions;
 
+  try {
+    // Check if replying to media
+    const imageMessage = msgRepondu?.imageMessage || ms.message?.imageMessage;
+    const videoMessage = msgRepondu?.videoMessage || ms.message?.videoMessage;
+    const audioMessage = msgRepondu?.audioMessage || ms.message?.audioMessage;
+    const documentMessage = msgRepondu?.documentMessage || ms.message?.documentMessage;
+
+    const mediaMessage = imageMessage || videoMessage || audioMessage || documentMessage;
+
+    if (!mediaMessage) {
+      return repondre("❌ Please reply to an image, video, or audio file.\n\nExample: .url (reply to media)");
+    }
+
+    // Send initial reaction
+    await zk.sendMessage(dest, {
+      react: { text: "⏳", key: ms.key }
+    });
+
+    // Get mime type
+    let mimeType = mediaMessage.mimetype || '';
+    let mediaBuffer;
+
+    // Download media
+    try {
+      mediaBuffer = await zk.downloadAndSaveMediaMessage(mediaMessage);
+    } catch (error) {
+      return repondre("❌ Failed to download media. Please try again.");
+    }
+
+    // Check file size (100MB limit)
+    const stats = fs.statSync(mediaBuffer);
+    if (stats.size > 100 * 1024 * 1024) {
+      fs.unlinkSync(mediaBuffer);
+      return repondre("❌ File size exceeds 100MB limit.");
+    }
+
+    // Determine extension
     let extension = '';
     if (mimeType.includes('image/jpeg')) extension = '.jpg';
     else if (mimeType.includes('image/png')) extension = '.png';
     else if (mimeType.includes('image/webp')) extension = '.webp';
     else if (mimeType.includes('image/gif')) extension = '.gif';
-    else if (mimeType.includes('video/mp4')) extension = '.mp4';
     else if (mimeType.includes('video')) extension = '.mp4';
-    else if (mimeType.includes('audio/mpeg')) extension = '.mp3';
     else if (mimeType.includes('audio')) extension = '.mp3';
-    else if (mimeType.includes('application/pdf')) extension = '.pdf';
-    else if (mimeType.includes('application')) extension = '.bin';
+    else if (mimeType.includes('application')) extension = '.pdf';
     else extension = '.bin';
 
+    // Generate filename: 6 random chars + extension
     const shortId = generateShortId(6);
     const filename = `${shortId}${extension}`;
 
+    // Upload to BMB API
     const form = new FormData();
-    form.append('file', mediaBuffer, {
-        filename: filename,
-        contentType: mimeType
+    form.append('file', fs.createReadStream(mediaBuffer), {
+      filename: filename,
+      contentType: mimeType
     });
 
     const response = await axios.post(BMB_API, form, {
-        headers: form.getHeaders(),
-        timeout: 60000
+      headers: form.getHeaders(),
+      timeout: 60000
     });
+
+    // Clean up temp file
+    fs.unlinkSync(mediaBuffer);
 
     const data = response.data;
     if (!data || !data.url) {
-        throw new Error("Upload failed. BMB did not return a valid URL.");
+      throw new Error("Upload failed. BMB did not return a valid URL.");
     }
 
-    return {
-        url: data.url,
-        shortId: shortId,
-        filename: filename
+    const mediaUrl = data.url;
+
+    // Determine media type
+    let mediaType = 'File';
+    if (mimeType.includes('image')) mediaType = 'Image';
+    else if (mimeType.includes('video')) mediaType = 'Video';
+    else if (mimeType.includes('audio')) mediaType = 'Audio';
+
+    const fileSizeMB = (stats.size / (1024 * 1024)).toFixed(2);
+
+    // Build response text
+    const textMessage = `📤 *FILE UPLOAD SUCCESS*
+━━━━━━━━━━━━━━━━
+📁 *Type:* ${mediaType}
+📦 *Size:* ${fileSizeMB} MB
+🔑 *ID:* ${shortId}
+🌐 *Link:* ${mediaUrl}
+━━━━━━━━━━━━━━━━
+© B.M.B-TECH`;
+
+    // Create buttons
+    const buttons = [
+      {
+        name: "cta_copy",
+        buttonParamsJson: JSON.stringify({
+          display_text: "📋 COPY LINK",
+          copy_code: mediaUrl
+        })
+      }
+    ];
+
+    // Send interactive message with buttons
+    const viewOnceMessage = {
+      viewOnceMessage: {
+        message: {
+          messageContextInfo: {
+            deviceListMetadata: {},
+            deviceListMetadataVersion: 2
+          },
+          interactiveMessage:
+            proto.Message.InteractiveMessage.create({
+              body: proto.Message.InteractiveMessage.Body.create({
+                text: textMessage
+              }),
+              footer: proto.Message.InteractiveMessage.Footer.create({
+                text: "© B.M.B-TECH"
+              }),
+              header: proto.Message.InteractiveMessage.Header.create({
+                title: "",
+                subtitle: "",
+                hasMediaAttachment: false
+              }),
+              nativeFlowMessage:
+                proto.Message.InteractiveMessage.NativeFlowMessage.create({
+                  buttons
+                })
+            })
+        }
+      }
     };
-}
 
-/* ===== COMMAND ===== */
-bmbtz(
-  {
-    nomCom: "url",
-    categorie: "General",
-    reaction: "🎯"
-  },
-  async (from, zk, context) => {
-    const { msgRepondu, ms, repondre } = context;
+    const waMsg = generateWAMessageFromContent(
+      dest,
+      viewOnceMessage,
+      {}
+    );
 
-    const mediaMessage = msgRepondu?.imageMessage || 
-                        msgRepondu?.videoMessage || 
-                        msgRepondu?.audioMessage ||
-                        ms.message?.imageMessage ||
-                        ms.message?.videoMessage ||
-                        ms.message?.audioMessage;
+    await zk.relayMessage(dest, waMsg.message, {
+      messageId: waMsg.key.id
+    });
 
-    if (!mediaMessage) {
-      return repondre("❌ Please reply to an image, video, or audio file with .url");
-    }
+    // React with success
+    await zk.sendMessage(dest, {
+      react: { text: "✅", key: ms.key }
+    });
 
-    let mimeType = '';
-    if (mediaMessage.mimetype) {
-        mimeType = mediaMessage.mimetype;
-    } else if (mediaMessage.imageMessage) {
-        mimeType = mediaMessage.imageMessage.mimetype || 'image/jpeg';
-    } else if (mediaMessage.videoMessage) {
-        mimeType = mediaMessage.videoMessage.mimetype || 'video/mp4';
-    } else if (mediaMessage.audioMessage) {
-        mimeType = mediaMessage.audioMessage.mimetype || 'audio/mpeg';
-    }
-
-    if (!mimeType) {
-      return repondre("❌ Cannot detect media type. Please try again.");
-    }
-
-    const processingMsg = await repondre("⏳ Processing your media...");
-
-    try {
-      const mediaBuffer = await zk.downloadMediaMessage(mediaMessage);
-
-      if (!mediaBuffer) {
-        throw new Error("Failed to download media");
-      }
-
-      const fileSizeMB = mediaBuffer.length / (1024 * 1024);
-      if (fileSizeMB > 100) {
-        throw new Error("File size exceeds 100MB limit.");
-      }
-
-      const result = await uploadToBMB(mediaBuffer, mimeType);
-
-      let mediaType = 'File';
-      if (mimeType.includes('image')) mediaType = 'Image';
-      else if (mimeType.includes('video')) mediaType = 'Video';
-      else if (mimeType.includes('audio')) mediaType = 'Audio';
-
-      const textResult = `
-╭───〔 B.M.B TECH URL 〕───
-│
-│ 📁 TYPE   : ${mediaType}
-│ 📦 SIZE   : ${fileSizeMB.toFixed(2)} MB
-│ 🔑 SHORT  : ${result.shortId}
-│ 🌐 LINK   :
-│ ${result.url}
-│
-│ 📋 Click Copy Button
-│
-╰────────────────────────
-`;
-
-      const buttons = [
-        {
-          name: "cta_copy",
-          buttonParamsJson: JSON.stringify({
-            display_text: "📋 COPY URL",
-            copy_code: result.url
-          })
-        }
-      ];
-
-      const viewOnceMessage = {
-        viewOnceMessage: {
-          message: {
-            messageContextInfo: {
-              deviceListMetadata: {},
-              deviceListMetadataVersion: 2
-            },
-            interactiveMessage:
-              proto.Message.InteractiveMessage.create({
-                body: proto.Message.InteractiveMessage.Body.create({
-                  text: textResult
-                }),
-                footer: proto.Message.InteractiveMessage.Footer.create({
-                  text: "B.M.B TECH BOT 🤖 | 24/7 Active"
-                }),
-                header: proto.Message.InteractiveMessage.Header.create({
-                  title: "✅ Upload Successful!",
-                  subtitle: "BMB URL Generated",
-                  hasMediaAttachment: false
-                }),
-                nativeFlowMessage:
-                  proto.Message.InteractiveMessage.NativeFlowMessage.create({
-                    buttons
-                  })
-              })
-          }
-        }
-      };
-
-      const waMsg = generateWAMessageFromContent(
-        from,
-        viewOnceMessage,
-        {}
-      );
-
-      await zk.relayMessage(from, waMsg.message, {
-        messageId: waMsg.key.id
-      });
-
-      await zk.sendMessage(from, { delete: processingMsg.key });
-
-    } catch (err) {
-      console.error("BMB UPLOAD ERROR:", err);
-      
-      let errorMsg = "❌ Failed to generate media URL.";
-      
-      if (err.message.includes("exceeds 100MB")) {
-        errorMsg = "❌ File too large! Please use file under 100MB.";
-      } else if (err.message.includes("timeout")) {
-        errorMsg = "⏰ Timeout! Please try again later.";
-      } else if (err.message.includes("upload failed")) {
-        errorMsg = "❌ Upload failed! Please try again.";
-      } else {
-        errorMsg = `❌ Error: ${err.message || "Unknown error occurred"}`;
-      }
-      
-      await repondre(errorMsg);
-    }
+  } catch (error) {
+    console.error("URL Upload Error:", error);
+    await repondre(`❌ Error: ${error.message || error}`);
   }
-);
+});
