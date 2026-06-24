@@ -53,7 +53,7 @@ function getBotInfo(mode, totalCommands) {
 
 // ====== MAIN COMMAND ======
 bmbtz({
-  nomCom: "menu22",
+  nomCom: "menu",
   categorie: "General",
   reaction: "🌚",
 }, async (dest, zk, commandeOptions) => {
@@ -111,13 +111,20 @@ bmbtz({
 
     // ====== VALIDATE NUMBER ======
     if (isNaN(categoryIndex) || categoryIndex < 0 || categoryIndex >= categories.length) {
+      // ====== REACTION YA ERROR KWA USER ======
+      await zk.sendMessage(message.key.remoteJid, {
+        react: {
+          text: "❌",
+          key: message.key
+        }
+      });
       await repondre(`❌ *Invalid number!* Send number between 1-${categories.length}.`);
       return;
     }
 
     try {
-      // ====== REACTION TO USER REPLY ======
-      await zk.sendMessage(dest, {
+      // ====== REACTION YA PROCESSING KWA USER ======
+      await zk.sendMessage(message.key.remoteJid, {
         react: {
           text: "⏳",
           key: message.key
@@ -143,8 +150,8 @@ bmbtz({
         contextInfo,
       }, { quoted: ms });
 
-      // ====== REACTION FOR SUCCESS ======
-      await zk.sendMessage(dest, {
+      // ====== REACTION YA SUCCESS KWA USER ======
+      await zk.sendMessage(message.key.remoteJid, {
         react: {
           text: "✅",
           key: message.key
