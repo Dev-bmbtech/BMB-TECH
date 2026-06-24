@@ -7,7 +7,7 @@ const moment = require("moment-timezone");
 const { format } = require(__dirname + "/../devbmb/mesfonctions");
 const s = require(__dirname + "/../settings");
 
-// ====== CONTACT QUOTE (KAMA YA VIDEO LOGO) ======
+// ====== CONTACT QUOTE ======
 const quotedContact = {
   key: {
     fromMe: false,
@@ -28,7 +28,7 @@ const quotedContact = {
   }
 };
 
-// ====== CONTEXT INFO (KAMA YA VIDEO LOGO) ======
+// ====== CONTEXT INFO ======
 const contextInfo = {
   forwardingScore: 999,
   isForwarded: true,
@@ -92,8 +92,11 @@ bmbtz({
   const categories = Object.keys(coms);
   const totalCommands = cm.length;
 
-  // ====== BUILD OPTIONS TEXT ======
-  let optionsText = `📑 *BMB TOOL MENU*\n\n`;
+  // ====== BUILD MAIN MENU WITH BOT INFO ======
+  const botInfo = getBotInfo(mode, totalCommands);
+  
+  let optionsText = botInfo; // ← Info ya bot inaongezwa hapa
+  optionsText += `📑 *BMB TOOL MENU*\n\n`;
   optionsText += `Reply with category number:\n\n`;
   
   categories.forEach((cat, index) => {
@@ -102,24 +105,23 @@ bmbtz({
   
   optionsText += `\n*Send number (1-${categories.length})*`;
 
-  // ====== SEND OPTIONS (KAMA YA VIDEO LOGO) ======
+  // ====== SEND MAIN MENU ======
   const sentMessage = await zk.sendMessage(dest, {
     text: optionsText,
     contextInfo,
   }, { quoted: quotedContact });
 
-  // ====== LISTENER (KAMA YA VIDEO LOGO) ======
+  // ====== LISTENER ======
   zk.ev.on('messages.upsert', async (update) => {
     const message = update.messages[0];
     if (!message.message || !message.message.extendedTextMessage) return;
+    if (message.key.fromMe) return;
 
-    // Check if replying to menu options
     if (message.message.extendedTextMessage.contextInfo?.stanzaId !== sentMessage.key.id) return;
 
     const responseText = message.message.extendedTextMessage.text.trim();
     const categoryIndex = parseInt(responseText) - 1;
 
-    // ====== VALIDATE NUMBER ======
     if (isNaN(categoryIndex) || categoryIndex < 0 || categoryIndex >= categories.length) {
       await repondre(`❌ Invalid number! Send 1-${categories.length}`);
       return;
@@ -134,18 +136,15 @@ bmbtz({
       const selectedCategory = categories[categoryIndex];
       const commands = coms[selectedCategory];
 
-      // ====== BUILD CATEGORY MENU ======
+      // ====== BUILD CATEGORY MENU (BOT INFO IMEONDOKA) ======
       let menuText = `📂 *${selectedCategory.toUpperCase()}*\n\n`;
       commands.forEach((cmd) => {
         menuText += `🔹 *${prefixe}${cmd}\n`;
       });
 
-      const infoText = getBotInfo(mode, totalCommands);
-      const finalText = infoText + menuText;
-
-      // ====== SEND MENU ======
+      // ====== SEND CATEGORY MENU WITHOUT BOT INFO ======
       await zk.sendMessage(dest, {
-        text: finalText,
+        text: menuText, // ← Hakuna bot info hapa!
         contextInfo,
       }, { quoted: ms });
 
