@@ -1,94 +1,62 @@
+const { bmbtz } = require("../devbmb/bmbtz");
 const util = require("util");
 const fs = require("fs-extra");
 const path = require("path");
 const os = require("os");
 const moment = require("moment-timezone");
 const { format } = require(__dirname + "/../devbmb/mesfonctions");
-const { bmbtz } = require(__dirname + "/../devbmb/bmbtz");
 const s = require(__dirname + "/../settings");
 
-// ====== BUILD MENU FUNCTION WITH RANDOM STYLES ======
-function buildMenu(coms, prefixe) {
-  const styles = [
-
-    // Boxed Style
-    (coms, prefixe) => {
-      let out = `📋 *B.M.B MENU*\n`;
-      for (const cat in coms) {
-        out += `\n╔════ ${cat.toUpperCase()} ════╗\n`;
-        coms[cat].forEach((cmd) => {
-          out += `║ ⚙️ ${prefixe}${cmd}\n`;
-        });
-        out += `╚═══════════╝\n`;
-      }
-      return out;
-    },
-
-    // Minimal Clean
-    (coms, prefixe) => {
-      let out = `🧾 *COMMANDS OVERVIEW*\n\n`;
-      for (const cat in coms) {
-        out += `📂 ${cat}\n`;
-        coms[cat].forEach((cmd) => {
-          out += `➤ ${prefixe}${cmd}\n`;
-        });
-        out += `-----------------------\n`;
-      }
-      return out;
-    },
-
-    // Zebra Layout
-    (coms, prefixe) => {
-      let out = `📑 *BMB TOOL MENU*\n\n`;
-      let i = 0;
-      for (const cat in coms) {
-        const bar = i % 2 === 0 ? "▰▰▰" : "▱▱▱";
-        out += `${bar} ${cat.toUpperCase()} ${bar}\n`;
-        coms[cat].forEach((cmd) => {
-          out += `🔹 ${prefixe}${cmd}\n`;
-        });
-        out += `\n`;
-        i++;
-      }
-      return out;
-    },
-
-    // Command Center
-    (coms, prefixe) => {
-      let out = `🔁 *B.M.B COMMAND CENTER* 🔁\n\n`;
-      for (const cat in coms) {
-        out += `👑👑 ${cat} 👑👑\n`;
-        coms[cat].forEach((cmd) => {
-          out += `↔️ ${prefixe}${cmd}\n`;
-        });
-        out += `------------------\n`;
-      }
-      return out;
-    },
-
-    // Framed Header
-    (coms, prefixe) => {
-      let out = `================\n     🔧 BMB MENU 🔧\n===============\n`;
-      for (const cat in coms) {
-        out += `\n[${cat.toUpperCase()}]\n`;
-        coms[cat].forEach((cmd) => {
-          out += `-> ${prefixe}${cmd}\n`;
-        });
-      }
-      return out;
+// ====== LOAD RANDOM IMAGE FROM /scs FOLDER ======
+function getRandomScsImage() {
+    const scsFolder = path.join(__dirname, "../scs");
+    const images = fs.readdirSync(scsFolder).filter(f =>
+        /^menu\d+\.(jpg|jpeg|png|mp4|gif)$/i.test(f)
+    );
+    
+    if (images.length === 0) {
+        return null;
     }
-  ];
-
-  // Chagua random style
-  const randomStyle = styles[Math.floor(Math.random() * styles.length)];
-  return randomStyle(coms, prefixe);
+    
+    // Get random image from folder
+    const randomIndex = Math.floor(Math.random() * images.length);
+    return path.join(scsFolder, images[randomIndex]);
 }
 
-// ====== BOT INFO ======
+// ====== CONTACT QUOTE ======
+const quotedContact = {
+  key: {
+    fromMe: false,
+    participant: `0@s.whatsapp.net`,
+    remoteJid: "status@broadcast"
+  },
+  message: {
+    contactMessage: {
+      displayName: "B.M.B VERIFIED ✅",
+      vcard:
+        "BEGIN:VCARD\n" +
+        "VERSION:3.0\n" +
+        "FN:B.M.B VERIFIED ✅\n" +
+        "ORG:BMB-TECH BOT;\n" +
+        "TEL;type=CELL;type=VOICE;waid=255767862457:+255767862457\n" +
+        "END:VCARD"
+    }
+  }
+};
+
+// ====== CONTEXT INFO (Bila links) ======
+const contextInfo = {
+  forwardingScore: 999,
+  isForwarded: true,
+  forwardedNewsletterMessageInfo: {
+    newsletterJid: "120363382023564830@newsletter",
+    newsletterName: "𝙱.𝙼.𝙱-𝚇𝙼𝙳",
+    serverMessageId: 1
+  }
+};
+
+// ====== BOT INFO (Bila date na time) ======
 function getBotInfo(mode, totalCommands) {
-  moment.tz.setDefault("EAT");
-  const currentTime = moment().format("HH:mm:ss");
-  const currentDate = moment().format("DD/MM/YYYY");
   const usedRAM = format(os.totalmem() - os.freemem());
   const totalRAM = format(os.totalmem());
 
@@ -96,8 +64,6 @@ function getBotInfo(mode, totalCommands) {
 ╭───「 *B.M.B-TECH* 」─────⊛
 ┃⊛╭───────────────⊛
 ┃⊛│☢️ *Mode*: ${mode.toUpperCase()}
-┃⊛│📅 *Date*: ${currentDate}
-┃⊛│⌚ *Time*: ${currentTime} (EAT)
 ┃⊛│🖥️ *RAM*: ${usedRAM} / ${totalRAM}
 ┃⊛│📦 *Commands*: ${totalCommands}
 ┃⊛│✅ *Status*: ONLINE
@@ -108,54 +74,16 @@ function getBotInfo(mode, totalCommands) {
 `;
 }
 
-// ====== SEND MENU MEDIA ======
-async function sendMenuMedia(zk, dest, ms, mediaUrl, caption, mentions) {
-  const contextInfo = {
-    forwardingScore: 999,
-    isForwarded: true,
-    mentionedJid: mentions,
-    forwardedNewsletterMessageInfo: {
-      newsletterJid: "120363382023564830@newsletter",
-      newsletterName: "𝙱.𝙼.𝙱-𝚇𝙼𝙳",
-      serverMessageId: 143,
-    },
-  };
-
-  if (mediaUrl.match(/\.(mp4|gif)$/i)) {
-    await zk.sendMessage(dest, {
-      video: { url: mediaUrl },
-      caption,
-      footer: "⚡ BMB-XBOT ⚡",
-      mentions,
-      gifPlayback: true,
-      contextInfo,
-    }, { quoted: ms });
-  } else if (mediaUrl.match(/\.(jpeg|jpg|png)$/i)) {
-    await zk.sendMessage(dest, {
-      image: { url: mediaUrl },
-      caption,
-      footer: "⚡ BMB-XBOT ⚡",
-      mentions,
-      contextInfo,
-    }, { quoted: ms });
-  } else {
-    await zk.sendMessage(dest, {
-      text: caption,
-      mentions,
-      contextInfo,
-    }, { quoted: ms });
-  }
-}
-
-// ====== MAIN COMMAND (menu) ======
+// ====== MAIN COMMAND ======
 bmbtz({
-  nomCom: "menu",
+  nomCom: "cmd",
   categorie: "General",
   reaction: "🌚",
 }, async (dest, zk, commandeOptions) => {
   const { ms, repondre, prefixe } = commandeOptions;
   const { cm } = require(__dirname + "/../devbmb/bmbtz");
 
+  // ====== GROUP COMMANDS BY CATEGORY ======
   let coms = {};
   let mode = s.MODE.toLowerCase() !== "yes" ? "private" : "public";
 
@@ -164,28 +92,114 @@ bmbtz({
     coms[com.categorie].push(com.nomCom);
   }
 
-  try {
-    const totalCommands = cm.length;
-    const infoText = getBotInfo(mode, totalCommands);
-    const menuText = buildMenu(coms, prefixe);
-    const finalText = infoText + menuText;
-    const sender = ms.key.participant || ms.key.remoteJid;
+  const categories = Object.keys(coms);
+  const totalCommands = cm.length;
 
-    // Load all matching images from /scs folder
-    const scsFolder = path.join(__dirname, "../scs");
-    const images = fs.readdirSync(scsFolder).filter(f =>
-      /^menu\d+\.(jpg|jpeg|png|mp4|gif)$/i.test(f)
-    );
+  // ====== GET RANDOM IMAGE FROM /scs ======
+  const imagePath = getRandomScsImage();
+  
+  // ====== BUILD OPTIONS TEXT ======
+  let optionsText = `📑 *BMB TOOL MENU*\n\n`;
+  optionsText += `Reply with category number:\n\n`;
+  
+  categories.forEach((cat, index) => {
+    optionsText += `${index + 1} ➠ ${cat.toUpperCase()}\n`;
+  });
+  
+  optionsText += `\n*Send number (1-${categories.length})*`;
 
-    if (images.length === 0) return repondre("❌ No menu images found in /scs folder.");
-
-    // Choose random image for this menu
-    const randomImage = images[Math.floor(Math.random() * images.length)];
-    const mediaUrl = path.join(scsFolder, randomImage);
-
-    await sendMenuMedia(zk, dest, ms, mediaUrl, finalText, [sender]);
-  } catch (err) {
-    console.error(`[DEBUG menu error]: ${err}`);
-    repondre(`❌ Failed to load menu:\n${err.message}`);
+  // ====== SEND OPTIONS WITH IMAGE ======
+  let sentMessage;
+  if (imagePath) {
+    try {
+      const imageBuffer = fs.readFileSync(imagePath);
+      sentMessage = await zk.sendMessage(dest, {
+        image: imageBuffer,
+        caption: optionsText,
+        contextInfo,
+      }, { quoted: quotedContact });
+    } catch (error) {
+      // If image fails, send text only
+      sentMessage = await zk.sendMessage(dest, {
+        text: optionsText,
+        contextInfo,
+      }, { quoted: quotedContact });
+    }
+  } else {
+    // If no image found, send text only
+    sentMessage = await zk.sendMessage(dest, {
+      text: optionsText,
+      contextInfo,
+    }, { quoted: quotedContact });
   }
+
+  // ====== LISTENER ======
+  zk.ev.on('messages.upsert', async (update) => {
+    const message = update.messages[0];
+    if (!message.message || !message.message.extendedTextMessage) return;
+
+    // Check if replying to menu options
+    if (message.message.extendedTextMessage.contextInfo?.stanzaId !== sentMessage.key.id) return;
+
+    const responseText = message.message.extendedTextMessage.text.trim();
+    const categoryIndex = parseInt(responseText) - 1;
+
+    // ====== VALIDATE NUMBER ======
+    if (isNaN(categoryIndex) || categoryIndex < 0 || categoryIndex >= categories.length) {
+      await repondre(`❌ Invalid number! Send 1-${categories.length}`);
+      return;
+    }
+
+    try {
+      // ====== REACT TO USER ======
+      await zk.sendMessage(message.key.remoteJid, {
+        react: { text: "⏳", key: message.key }
+      });
+
+      const selectedCategory = categories[categoryIndex];
+      const commands = coms[selectedCategory];
+
+      // ====== BUILD CATEGORY MENU ======
+      let menuText = `📂 *${selectedCategory.toUpperCase()}*\n\n`;
+      commands.forEach((cmd) => {
+        menuText += `🔹 *${prefixe}${cmd}\n`;
+      });
+
+      const infoText = getBotInfo(mode, totalCommands);
+      const finalText = infoText + menuText;
+
+      // ====== SEND MENU WITH RANDOM IMAGE ======
+      const categoryImagePath = getRandomScsImage();
+      if (categoryImagePath) {
+        try {
+          const categoryImageBuffer = fs.readFileSync(categoryImagePath);
+          await zk.sendMessage(dest, {
+            image: categoryImageBuffer,
+            caption: finalText,
+            contextInfo,
+          }, { quoted: ms });
+        } catch (error) {
+          // If image fails, send text only
+          await zk.sendMessage(dest, {
+            text: finalText,
+            contextInfo,
+          }, { quoted: ms });
+        }
+      } else {
+        await zk.sendMessage(dest, {
+          text: finalText,
+          contextInfo,
+        }, { quoted: ms });
+      }
+
+      // ====== REACT SUCCESS ======
+      await zk.sendMessage(message.key.remoteJid, {
+        react: { text: "✅", key: message.key }
+      });
+
+    } catch (error) {
+      console.error(error);
+      await repondre(`❌ Error: ${error.message}`);
+    }
+  });
 });
