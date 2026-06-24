@@ -7,7 +7,23 @@ const moment = require("moment-timezone");
 const { format } = require(__dirname + "/../devbmb/mesfonctions");
 const s = require(__dirname + "/../settings");
 
-// ====== CONTACT QUOTE (KAMA YA VIDEO LOGO) ======
+// ====== LOAD RANDOM IMAGE FROM /scs FOLDER ======
+function getRandomScsImage() {
+    const scsFolder = path.join(__dirname, "../scs");
+    const images = fs.readdirSync(scsFolder).filter(f =>
+        /^menu\d+\.(jpg|jpeg|png|mp4|gif)$/i.test(f)
+    );
+    
+    if (images.length === 0) {
+        return null;
+    }
+    
+    // Get random image from folder
+    const randomIndex = Math.floor(Math.random() * images.length);
+    return path.join(scsFolder, images[randomIndex]);
+}
+
+// ====== CONTACT QUOTE ======
 const quotedContact = {
   key: {
     fromMe: false,
@@ -28,7 +44,7 @@ const quotedContact = {
   }
 };
 
-// ====== CONTEXT INFO (KAMA YA VIDEO LOGO) ======
+// ====== CONTEXT INFO (Bila links) ======
 const contextInfo = {
   forwardingScore: 999,
   isForwarded: true,
@@ -36,22 +52,11 @@ const contextInfo = {
     newsletterJid: "120363382023564830@newsletter",
     newsletterName: "𝙱.𝙼.𝙱-𝚇𝙼𝙳",
     serverMessageId: 1
-  },
-  externalAdReply: {
-    title: "𝙱.𝙼.𝙱-𝚇𝙼𝙳",
-    body: "Powered by B.M.B TECH",
-    thumbnailUrl: "https://files.catbox.moe/g2brwg.jpg",
-    sourceUrl: "https://whatsapp.com/channel/0029VawO6hgF6sn7k3SuVU3z",
-    mediaType: 1,
-    renderLargerThumbnail: true
   }
 };
 
-// ====== BOT INFO ======
+// ====== BOT INFO (Bila date na time) ======
 function getBotInfo(mode, totalCommands) {
-  moment.tz.setDefault("EAT");
-  const currentTime = moment().format("HH:mm:ss");
-  const currentDate = moment().format("DD/MM/YYYY");
   const usedRAM = format(os.totalmem() - os.freemem());
   const totalRAM = format(os.totalmem());
 
@@ -59,8 +64,6 @@ function getBotInfo(mode, totalCommands) {
 ╭───「 *B.M.B-TECH* 」─────⊛
 ┃⊛╭───────────────⊛
 ┃⊛│☢️ *Mode*: ${mode.toUpperCase()}
-┃⊛│📅 *Date*: ${currentDate}
-┃⊛│⌚ *Time*: ${currentTime} (EAT)
 ┃⊛│🖥️ *RAM*: ${usedRAM} / ${totalRAM}
 ┃⊛│📦 *Commands*: ${totalCommands}
 ┃⊛│✅ *Status*: ONLINE
@@ -92,6 +95,9 @@ bmbtz({
   const categories = Object.keys(coms);
   const totalCommands = cm.length;
 
+  // ====== GET RANDOM IMAGE FROM /scs ======
+  const imagePath = getRandomScsImage();
+  
   // ====== BUILD OPTIONS TEXT ======
   let optionsText = `📑 *BMB TOOL MENU*\n\n`;
   optionsText += `Reply with category number:\n\n`;
@@ -102,13 +108,32 @@ bmbtz({
   
   optionsText += `\n*Send number (1-${categories.length})*`;
 
-  // ====== SEND OPTIONS (KAMA YA VIDEO LOGO) ======
-  const sentMessage = await zk.sendMessage(dest, {
-    text: optionsText,
-    contextInfo,
-  }, { quoted: quotedContact });
+  // ====== SEND OPTIONS WITH IMAGE ======
+  let sentMessage;
+  if (imagePath) {
+    try {
+      const imageBuffer = fs.readFileSync(imagePath);
+      sentMessage = await zk.sendMessage(dest, {
+        image: imageBuffer,
+        caption: optionsText,
+        contextInfo,
+      }, { quoted: quotedContact });
+    } catch (error) {
+      // If image fails, send text only
+      sentMessage = await zk.sendMessage(dest, {
+        text: optionsText,
+        contextInfo,
+      }, { quoted: quotedContact });
+    }
+  } else {
+    // If no image found, send text only
+    sentMessage = await zk.sendMessage(dest, {
+      text: optionsText,
+      contextInfo,
+    }, { quoted: quotedContact });
+  }
 
-  // ====== LISTENER (KAMA YA VIDEO LOGO) ======
+  // ====== LISTENER ======
   zk.ev.on('messages.upsert', async (update) => {
     const message = update.messages[0];
     if (!message.message || !message.message.extendedTextMessage) return;
@@ -143,11 +168,29 @@ bmbtz({
       const infoText = getBotInfo(mode, totalCommands);
       const finalText = infoText + menuText;
 
-      // ====== SEND MENU ======
-      await zk.sendMessage(dest, {
-        text: finalText,
-        contextInfo,
-      }, { quoted: ms });
+      // ====== SEND MENU WITH RANDOM IMAGE ======
+      const categoryImagePath = getRandomScsImage();
+      if (categoryImagePath) {
+        try {
+          const categoryImageBuffer = fs.readFileSync(categoryImagePath);
+          await zk.sendMessage(dest, {
+            image: categoryImageBuffer,
+            caption: finalText,
+            contextInfo,
+          }, { quoted: ms });
+        } catch (error) {
+          // If image fails, send text only
+          await zk.sendMessage(dest, {
+            text: finalText,
+            contextInfo,
+          }, { quoted: ms });
+        }
+      } else {
+        await zk.sendMessage(dest, {
+          text: finalText,
+          contextInfo,
+        }, { quoted: ms });
+      }
 
       // ====== REACT SUCCESS ======
       await zk.sendMessage(message.key.remoteJid, {
