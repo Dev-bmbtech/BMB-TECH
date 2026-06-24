@@ -3,17 +3,29 @@ const pkg = require("@whiskeysockets/baileys");
 const { generateWAMessageFromContent, proto } = pkg;
 const fs = require("fs-extra");
 const path = require("path");
+const conf = require("../settings");
 
 bmbtz({
   nomCom: "getcmd",
-  categorie: "download",
+  categorie: "Developer",
   reaction: "📂",
   desc: "Get command file information and code"
 }, async (dest, zk, commandeOptions) => {
   const { repondre, arg, ms } = commandeOptions;
 
+  // ===== OWNER RESTRICTION =====
+  const cleanOwner = conf.NUMERO_OWNER.replace(/[^0-9]/g, "");
+  const ownerJid = `${cleanOwner}@s.whatsapp.net`;
+  
+  const sender = ms.key.remoteJid || ms.key.participant;
+  
+  // Check if sender is owner
+  if (sender !== ownerJid && sender !== `${cleanOwner}@s.whatsapp.net`) {
+    return repondre("❌ Access Denied. This command is restricted to the bot owner.");
+  }
+
   if (!arg || arg.length === 0) {
-    return repondre(`❌ *Usage:* .getcmd <command-name>\n\n*Example:* .getcmd npm`);
+    return repondre(`❌ Usage: .getcmd <command-name>\n\nExample: .getcmd npm`);
   }
 
   const cmdName = arg[0].toLowerCase().trim();
@@ -46,7 +58,7 @@ bmbtz({
     }
 
     if (!foundFile) {
-      await repondre(`❌ Command *"${cmdName}"* not found!`);
+      await repondre(`❌ Command "${cmdName}" not found!`);
       return;
     }
 
@@ -62,27 +74,28 @@ bmbtz({
       category = categoryMatch[1];
     }
 
-    // ===== SEND FILE AS DOCUMENT =====
+    const fullMessage = `📂 COMMAND FILE
+│
+├─ 📄 File: ${foundFile}
+├─ 📂 Category: ${category}
+├─ 📊 Size: ${fileSize} chars (${fileSizeKB} KB)
+├─ 📝 Lines: ${fileLines}
+│
+└─ © Powered By B.M.B-TECH
+
+💻 Javascript Code
+\`\`\`javascript
+${fullContent}
+\`\`\`
+
+📎 File attached above ↑`;
+
     await zk.sendMessage(dest, {
       document: fs.readFileSync(filePath),
       mimetype: 'application/javascript',
       fileName: foundFile,
-      caption: `${foundFile}\n${fileSizeKB} kB • JS`
+      caption: `📎 ${foundFile} • ${fileSizeKB} KB • JS`
     }, { quoted: ms });
-
-    // ===== BUILD RESPONSE TEXT KAMA SCREENSHOT =====
-    const responseText = `📂 *COMMAND FILE*
-│
-├─ 📄 *File:* ${foundFile}
-├─ 📂 *Category:* ${category}
-├─ 📊 *Size:* ${fileSize} chars
-│
-└─ *© Powered By B.M.B-TECH*
-
-💻 *Javascript code*
-\`\`\`javascript
-${fullContent}
-\`\`\``;
 
     const buttons = [
       {
@@ -104,7 +117,7 @@ ${fullContent}
           interactiveMessage:
             proto.Message.InteractiveMessage.create({
               body: proto.Message.InteractiveMessage.Body.create({
-                text: responseText
+                text: fullMessage
               }),
               footer: proto.Message.InteractiveMessage.Footer.create({
                 text: "© B.M.B-TECH"
@@ -132,18 +145,6 @@ ${fullContent}
     await zk.relayMessage(dest, waMsg.message, {
       messageId: waMsg.key.id
     });
-
-    // ===== SEND SECOND FILE INFO KAMA SCREENSHOT =====
-    const secondMessage = `📂 *GETCMD*
-${foundFile}
-├─ 📂 Category: ${category}
-├─ 📊 Size: ${fileSize} chars
-│
-└─ *© Powered By B.M.B-TECH*`;
-
-    await zk.sendMessage(dest, {
-      text: secondMessage
-    }, { quoted: ms });
 
     await zk.sendMessage(dest, {
       react: { text: "✅", key: ms.key }
