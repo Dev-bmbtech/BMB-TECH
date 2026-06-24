@@ -28,7 +28,7 @@ const quotedContact = {
   }
 };
 
-// ====== CONTEXT INFO (KWA BOT INFO TU) ======
+// ====== CONTEXT INFO ======
 const contextInfo = {
   forwardingScore: 999,
   isForwarded: true,
@@ -93,10 +93,10 @@ bmbtz({
   // ====== BOT INFO ======
   const botInfo = getBotInfo(mode, totalCommands);
 
-  // ====== SEND BOT INFO (NA CONTEXTINFO) ======
+  // ====== SEND BOT INFO ======
   await zk.sendMessage(dest, {
     text: botInfo,
-    contextInfo, // ← HII INA VIEW CHANNEL
+    contextInfo,
   }, { quoted: quotedContact });
 
   // ====== BUILD MENU OPTIONS ======
@@ -109,29 +109,31 @@ bmbtz({
   
   optionsText += `\n*Send number (1-${categories.length})*`;
 
-  // ====== SEND MENU OPTIONS (BILA CONTEXTINFO) ======
+  // ====== SEND MENU OPTIONS ======
   const sentMessage = await zk.sendMessage(dest, {
     text: optionsText,
-    // contextInfo imeondolewa! ← HAKUNA VIEW CHANNEL
   }, { quoted: quotedContact });
 
-  // ====== LISTENER ======
+  // ====== LISTENER (FAST REPLY KAMA VIDEO LOGO) ======
   zk.ev.on('messages.upsert', async (update) => {
     const message = update.messages[0];
     if (!message.message || !message.message.extendedTextMessage) return;
     if (message.key.fromMe) return;
 
+    // Check if replying to menu options
     if (message.message.extendedTextMessage.contextInfo?.stanzaId !== sentMessage.key.id) return;
 
     const responseText = message.message.extendedTextMessage.text.trim();
     const categoryIndex = parseInt(responseText) - 1;
 
+    // ====== VALIDATE NUMBER ======
     if (isNaN(categoryIndex) || categoryIndex < 0 || categoryIndex >= categories.length) {
       await repondre(`❌ Invalid number! Send 1-${categories.length}`);
       return;
     }
 
     try {
+      // ====== REACT TO USER (FAST) ======
       await zk.sendMessage(message.key.remoteJid, {
         react: { text: "⏳", key: message.key }
       });
@@ -139,16 +141,18 @@ bmbtz({
       const selectedCategory = categories[categoryIndex];
       const commands = coms[selectedCategory];
 
+      // ====== BUILD CATEGORY MENU ======
       let menuText = `📂 *${selectedCategory.toUpperCase()}*\n\n`;
       commands.forEach((cmd) => {
         menuText += `🔹 *${prefixe}${cmd}\n`;
       });
 
+      // ====== SEND CATEGORY MENU (FAST) ======
       await zk.sendMessage(dest, {
         text: menuText,
-        // contextInfo imeondolewa! ← HAKUNA VIEW CHANNEL
       }, { quoted: ms });
 
+      // ====== REACT SUCCESS (FAST) ======
       await zk.sendMessage(message.key.remoteJid, {
         react: { text: "✅", key: message.key }
       });
