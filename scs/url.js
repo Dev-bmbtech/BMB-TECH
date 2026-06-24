@@ -1,11 +1,12 @@
 const { bmbtz } = require("../devbmb/bmbtz");
-const pkg = require('@whiskeysockets/baileys');
+const pkg = require("@whiskeysockets/baileys");
 const { generateWAMessageFromContent, proto } = pkg;
 const fs = require("fs-extra");
-const ffmpeg = require("fluent-ffmpeg");
-const { Catbox } = require('node-catbox');
+const axios = require("axios");
+const FormData = require("form-data");
 
-const catbox = new Catbox();
+/* ===== BMB API CONFIG ===== */
+const BMB_API = 'https://url.bmbxmd.workers.dev/api/upload';
 
 /* ===== QUOTED CONTACT ===== */
 const quotedContact = {
@@ -27,87 +28,128 @@ END:VCARD`
   }
 };
 
-async function uploadToCatbox(path) {
-  if (!fs.existsSync(path)) throw new Error("File not found");
-  return await catbox.uploadFile({ path });
+/* ===== GENERATE SHORT ID ===== */
+function generateShortId(length = 6) {
+    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    let result = '';
+    for (let i = 0; i < length; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
 }
 
-async function convertToMp3(input, output) {
-  return new Promise((resolve, reject) => {
-    ffmpeg(input)
-      .toFormat("mp3")
-      .on("end", () => resolve(output))
-      .on("error", reject)
-      .save(output);
-  });
+/* ===== UPLOAD TO BMB API ===== */
+async function uploadToBMB(mediaBuffer, mimeType) {
+    if (!mediaBuffer) throw new Error("No media buffer provided");
+
+    let extension = '';
+    if (mimeType.includes('image/jpeg')) extension = '.jpg';
+    else if (mimeType.includes('image/png')) extension = '.png';
+    else if (mimeType.includes('image/webp')) extension = '.webp';
+    else if (mimeType.includes('image/gif')) extension = '.gif';
+    else if (mimeType.includes('video/mp4')) extension = '.mp4';
+    else if (mimeType.includes('video')) extension = '.mp4';
+    else if (mimeType.includes('audio/mpeg')) extension = '.mp3';
+    else if (mimeType.includes('audio')) extension = '.mp3';
+    else if (mimeType.includes('application/pdf')) extension = '.pdf';
+    else if (mimeType.includes('application')) extension = '.bin';
+    else extension = '.bin';
+
+    const shortId = generateShortId(6);
+    const filename = `${shortId}${extension}`;
+
+    const form = new FormData();
+    form.append('file', mediaBuffer, {
+        filename: filename,
+        contentType: mimeType
+    });
+
+    const response = await axios.post(BMB_API, form, {
+        headers: form.getHeaders(),
+        timeout: 60000
+    });
+
+    const data = response.data;
+    if (!data || !data.url) {
+        throw new Error("Upload failed. BMB did not return a valid URL.");
+    }
+
+    return {
+        url: data.url,
+        shortId: shortId,
+        filename: filename
+    };
 }
 
+/* ===== COMMAND ===== */
 bmbtz(
-  { nomCom: "url", categorie: "General", reaction: "💗" },
+  {
+    nomCom: "url",
+    categorie: "General",
+    reaction: "🎯"
+  },
   async (from, zk, context) => {
     const { msgRepondu, ms, repondre } = context;
 
-    /* ===== CHAGUA MEDIA ===== */
-    const targetMsg =
-      msgRepondu ||
-      ms.message?.imageMessage ||
-      ms.message?.videoMessage ||
-      ms.message?.audioMessage
-        ? ms
-        : null;
+    const mediaMessage = msgRepondu?.imageMessage || 
+                        msgRepondu?.videoMessage || 
+                        msgRepondu?.audioMessage ||
+                        ms.message?.imageMessage ||
+                        ms.message?.videoMessage ||
+                        ms.message?.audioMessage;
 
-    if (!msgRepondu && !ms.message?.imageMessage && !ms.message?.videoMessage && !ms.message?.audioMessage) {
-      return repondre("Please reply to or send an image, video, or audio with `.url`.");
+    if (!mediaMessage) {
+      return repondre("❌ Please reply to an image, video, or audio file with .url");
     }
 
-    let mediaPath;
+    let mimeType = '';
+    if (mediaMessage.mimetype) {
+        mimeType = mediaMessage.mimetype;
+    } else if (mediaMessage.imageMessage) {
+        mimeType = mediaMessage.imageMessage.mimetype || 'image/jpeg';
+    } else if (mediaMessage.videoMessage) {
+        mimeType = mediaMessage.videoMessage.mimetype || 'video/mp4';
+    } else if (mediaMessage.audioMessage) {
+        mimeType = mediaMessage.audioMessage.mimetype || 'audio/mpeg';
+    }
+
+    if (!mimeType) {
+      return repondre("❌ Cannot detect media type. Please try again.");
+    }
+
+    const processingMsg = await repondre("⏳ Processing your media...");
 
     try {
-      /* ===== VIDEO ===== */
-      if (msgRepondu?.videoMessage || ms.message?.videoMessage) {
-        const video = msgRepondu?.videoMessage || ms.message.videoMessage;
+      const mediaBuffer = await zk.downloadMediaMessage(mediaMessage);
 
-        if (video.fileLength > 50 * 1024 * 1024) {
-          return repondre("Video is too large.");
-        }
-
-        mediaPath = await zk.downloadAndSaveMediaMessage(video);
+      if (!mediaBuffer) {
+        throw new Error("Failed to download media");
       }
 
-      /* ===== IMAGE ===== */
-      else if (msgRepondu?.imageMessage || ms.message?.imageMessage) {
-        const image = msgRepondu?.imageMessage || ms.message.imageMessage;
-        mediaPath = await zk.downloadAndSaveMediaMessage(image);
+      const fileSizeMB = mediaBuffer.length / (1024 * 1024);
+      if (fileSizeMB > 100) {
+        throw new Error("File size exceeds 100MB limit.");
       }
 
-      /* ===== AUDIO ===== */
-      else if (msgRepondu?.audioMessage || ms.message?.audioMessage) {
-        const audio = msgRepondu?.audioMessage || ms.message.audioMessage;
-        const input = await zk.downloadAndSaveMediaMessage(audio);
-        const output = `${input}.mp3`;
-        await convertToMp3(input, output);
-        fs.unlinkSync(input);
-        mediaPath = output;
-      } 
-      else {
-        return repondre("Unsupported media type.");
-      }
+      const result = await uploadToBMB(mediaBuffer, mimeType);
 
-      /* ===== UPLOAD ===== */
-      const url = await uploadToCatbox(mediaPath);
-      fs.unlinkSync(mediaPath);
+      let mediaType = 'File';
+      if (mimeType.includes('image')) mediaType = 'Image';
+      else if (mimeType.includes('video')) mediaType = 'Video';
+      else if (mimeType.includes('audio')) mediaType = 'Audio';
 
-      /* ===== BOX UI ===== */
       const textResult = `
 ╭───〔 B.M.B TECH URL 〕───
 │
-│ 🔗 Generated Link:
+│ 📁 TYPE   : ${mediaType}
+│ 📦 SIZE   : ${fileSizeMB.toFixed(2)} MB
+│ 🔑 SHORT  : ${result.shortId}
+│ 🌐 LINK   :
+│ ${result.url}
 │
-│ ${url}
+│ 📋 Click Copy Button
 │
-│ 📋 Use COPY button
-│
-╰─────────────────────
+╰────────────────────────
 `;
 
       const buttons = [
@@ -115,7 +157,7 @@ bmbtz(
           name: "cta_copy",
           buttonParamsJson: JSON.stringify({
             display_text: "📋 COPY URL",
-            copy_code: url
+            copy_code: result.url
           })
         }
       ];
@@ -127,35 +169,56 @@ bmbtz(
               deviceListMetadata: {},
               deviceListMetadataVersion: 2
             },
-            interactiveMessage: proto.Message.InteractiveMessage.create({
-              body: proto.Message.InteractiveMessage.Body.create({
-                text: textResult
-              }),
-              footer: proto.Message.InteractiveMessage.Footer.create({
-                text: ""
-              }),
-              header: proto.Message.InteractiveMessage.Header.create({
-                title: "",
-                subtitle: "",
-                hasMediaAttachment: false
-              }),
-              nativeFlowMessage:
-                proto.Message.InteractiveMessage.NativeFlowMessage.create({
-                  buttons
-                })
-            })
+            interactiveMessage:
+              proto.Message.InteractiveMessage.create({
+                body: proto.Message.InteractiveMessage.Body.create({
+                  text: textResult
+                }),
+                footer: proto.Message.InteractiveMessage.Footer.create({
+                  text: "B.M.B TECH BOT 🤖 | 24/7 Active"
+                }),
+                header: proto.Message.InteractiveMessage.Header.create({
+                  title: "✅ Upload Successful!",
+                  subtitle: "BMB URL Generated",
+                  hasMediaAttachment: false
+                }),
+                nativeFlowMessage:
+                  proto.Message.InteractiveMessage.NativeFlowMessage.create({
+                    buttons
+                  })
+              })
           }
         }
       };
 
-      const waMsg = generateWAMessageFromContent(from, viewOnceMessage, {});
+      const waMsg = generateWAMessageFromContent(
+        from,
+        viewOnceMessage,
+        {}
+      );
+
       await zk.relayMessage(from, waMsg.message, {
         messageId: waMsg.key.id
       });
 
+      await zk.sendMessage(from, { delete: processingMsg.key });
+
     } catch (err) {
-      console.error("URL ERROR:", err);
-      repondre("Failed to generate URL.");
+      console.error("BMB UPLOAD ERROR:", err);
+      
+      let errorMsg = "❌ Failed to generate media URL.";
+      
+      if (err.message.includes("exceeds 100MB")) {
+        errorMsg = "❌ File too large! Please use file under 100MB.";
+      } else if (err.message.includes("timeout")) {
+        errorMsg = "⏰ Timeout! Please try again later.";
+      } else if (err.message.includes("upload failed")) {
+        errorMsg = "❌ Upload failed! Please try again.";
+      } else {
+        errorMsg = `❌ Error: ${err.message || "Unknown error occurred"}`;
+      }
+      
+      await repondre(errorMsg);
     }
   }
 );
