@@ -3,67 +3,92 @@ const axios = require("axios");
 
 bmbtz({
   nomCom: "lyrics",
-  reaction: '🎵', // Changed reaction to match music theme
+  reaction: '🎵',
   categorie: "Search",
-  aliases: ["lyric", "mistari"] // Added aliases
+  aliases: ["lyric", "mistari"]
 }, async (dest, zk, commandeOptions) => {
   const { repondre, arg, ms } = commandeOptions;
   const songName = arg.join(" ").trim();
 
   if (!songName) {
-    return repondre("Please provide a song name. Example: *" + s.PREFIXE + "lyrics Shape of You*");
+    return repondre("❌ Please provide a song name.\nExample: *lyrics Kau masih kekasihku*");
   }
-
-  // API endpoints (same as original)
-  const apis = [
-    `https://api.dreaded.site/api/lyrics?title=${encodeURIComponent(songName)}`,
-    `https://some-random-api.com/others/lyrics?title=${encodeURIComponent(songName)}`,
-    `https://api.davidcyriltech.my.id/lyrics?title=${encodeURIComponent(songName)}`
-  ];
-
-  let lyricsData;
-  for (const api of apis) {
-    try {
-      const response = await axios.get(api);
-      if (response.data?.result?.lyrics) {
-        lyricsData = response.data;
-        break;
-      }
-    } catch (error) {
-      console.error(`API ${api} failed:`, error.message);
-    }
-  }
-
-  if (!lyricsData?.result) {
-    return repondre("❌ Couldn't find lyrics for *" + songName + "*");
-  }
-
-  const { title, artist, thumb, lyrics } = lyricsData.result;
-  const imageUrl = thumb || "https://files.catbox.moe/rpea5k.jpg"; // Fallback image
 
   try {
-    // Download album art
-    const imageResponse = await axios.get(imageUrl, { responseType: "arraybuffer" });
+    // Using the working API from the screenshot
+    const apiUrl = `https://api.deline.web.id/tools/lyrics?title=${encodeURIComponent(songName)}`;
+    const response = await axios.get(apiUrl);
     
-    await zk.sendMessage(dest, {
-      image: Buffer.from(imageResponse.data),
-      caption: `🎶 *${title}* - ${artist}\n\n${lyrics}\n\n*Powered by B.M.B-TECH*`,
-      contextInfo: {
-        externalAdReply: {
-          title: "B.M.B-TECH Lyrics Finder",
-          body: "Get any song lyrics instantly",
-          thumbnail: await (await axios.get(imageUrl, { responseType: "arraybuffer" })).data,
-          mediaType: 1,
-          mediaUrl: "",
-          sourceUrl: ""
-        }
+    // Check if we have valid data
+    if (!response.data || !response.data.title) {
+      return repondre(`❌ Couldn't find lyrics for *${songName}*`);
+    }
+
+    const { title, artist, lyrics, thumb } = response.data;
+    
+    // Create formatted message
+    let message = `🎵 *LYRICS FOUND* 🎵\n`;
+    message += `◈━━━━━━━━━━━━━━◈\n`;
+    message += `│❒ *Title:* ${title}\n`;
+    message += `│❒ *Artist:* ${artist || 'Unknown'}\n`;
+    message += `◈━━━━━━━━━━━━━━◈\n\n`;
+    
+    // Limit lyrics to prevent message overload (WhatsApp max ~4096 chars)
+    const maxLength = 3500;
+    const lyricsText = lyrics.length > maxLength 
+      ? lyrics.substring(0, maxLength) + '\n\n... [truncated]' 
+      : lyrics;
+    
+    message += lyricsText;
+
+    // Try to send with image if available
+    if (thumb) {
+      try {
+        const imageResponse = await axios.get(thumb, { responseType: "arraybuffer" });
+        await zk.sendMessage(dest, {
+          image: Buffer.from(imageResponse.data),
+          caption: message,
+          contextInfo: {
+            mentionedJid: [dest.sender || ""],
+            forwardingScore: 999,
+            isForwarded: true,
+          }
+        }, { quoted: ms });
+      } catch (imgError) {
+        // If image fails, send text only
+        await zk.sendMessage(dest, {
+          text: message,
+          contextInfo: {
+            mentionedJid: [dest.sender || ""],
+            forwardingScore: 999,
+            isForwarded: true,
+          }
+        }, { quoted: ms });
       }
-    }, { quoted: ms });
+    } else {
+      // No image available, send text only
+      await zk.sendMessage(dest, {
+        text: message,
+        contextInfo: {
+          mentionedJid: [dest.sender || ""],
+          forwardingScore: 999,
+          isForwarded: true,
+        }
+      }, { quoted: ms });
+    }
 
   } catch (error) {
-    console.error("Error sending lyrics:", error);
-    // Fallback to text-only
-    repondre(`🎶 *${title}* - ${artist}\n\n${lyrics.substring(0, 2000)}...\n\n*[Truncated - image failed to load]*`);
+    console.error("Lyrics API Error:", error.message);
+    
+    // Handle specific error cases
+    if (error.response && error.response.status === 404) {
+      return repondre(`❌ Song "*${songName}*" not found. Please check the title and try again.`);
+    }
+    
+    if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
+      return repondre(`⏱️ Request timed out. Please try again later.`);
+    }
+    
+    return repondre(`❌ Error fetching lyrics: ${error.message}`);
   }
 });
-      
