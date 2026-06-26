@@ -1,162 +1,122 @@
 const { bmbtz } = require("../devbmb/bmbtz");
-const fs = require("fs-extra");
-const path = require("path");
-const moment = require("moment-timezone");
-const os = require("os");
-const { exec } = require("child_process");
-const util = require("util");
-const execPromise = util.promisify(exec);
+const speed = require("performance-now");
+const os = require('os');
 
-// Function to get last commit date
-async function getLastCommitDate() {
+// Function for delay simulation
+function delay(ms) {
+  console.log(`⏱️ delay for ${ms}ms`);
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// Helper function to safely get the sender's name
+function getName(dest, commandeOptions) {
+  return (
+    commandeOptions.pushName ||
+    commandeOptions.name ||
+    (dest.sender ? dest.sender.split('@')[0] : "Unknown User")
+  );
+}
+
+// Helper function to format uptime
+function formatUptime(seconds) {
+  const days = Math.floor(seconds / (3600 * 24));
+  const hours = Math.floor((seconds % (3600 * 24)) / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = Math.floor(seconds % 60);
+  
+  let parts = [];
+  if (days > 0) parts.push(`${days} day${days > 1 ? 's' : ''}`);
+  if (hours > 0) parts.push(`${hours} hour${hours > 1 ? 's' : ''}`);
+  if (minutes > 0) parts.push(`${minutes} minute${minutes > 1 ? 's' : ''}`);
+  if (secs > 0 || parts.length === 0) parts.push(`${secs} second${secs > 1 ? 's' : ''}`);
+  
+  return parts.join(', ');
+}
+
+// Function to measure ping
+async function measurePing(zk, dest) {
+  const start = speed();
   try {
-    const { stdout } = await execPromise('git log -1 --format=%cd --date=iso');
-    return stdout.trim();
+    const sent = await zk.sendMessage(dest, { text: '🏓' });
+    const end = speed();
+    await zk.sendMessage(dest, { delete: sent.key });
+    return (end - start).toFixed(2);
   } catch (error) {
-    return "Unknown";
+    return 'N/A';
   }
 }
 
-// Function to get last commit message
-async function getLastCommitMessage() {
-  try {
-    const { stdout } = await execPromise('git log -1 --format=%s');
-    return stdout.trim();
-  } catch (error) {
-    return "No updates";
-  }
-}
-
-// Function to get current branch
-async function getCurrentBranch() {
-  try {
-    const { stdout } = await execPromise('git rev-parse --abbrev-ref HEAD');
-    return stdout.trim();
-  } catch (error) {
-    return "main";
-  }
-}
-
-// Function to get repo URL
-async function getRepoURL() {
-  try {
-    const { stdout } = await execPromise('git config --get remote.origin.url');
-    return stdout.trim().replace('.git', '');
-  } catch (error) {
-    return "https://github.com/Dev-bmbtech/BMB-TECH";
-  }
-}
-
-// Function to get commit count
-async function getCommitCount() {
-  try {
-    const { stdout } = await execPromise('git rev-list --count HEAD');
-    return stdout.trim();
-  } catch (error) {
-    return "Unknown";
-  }
-}
-
+// Command: Uptime
 bmbtz(
   {
     nomCom: 'uptime',
-    desc: 'Check bot runtime and system status',
-    categorie: 'General',
-    reaction: '⌚'
+    desc: 'Check bot runtime & response speed',
+    Categorie: 'General',
+    reaction: '📊',
+    fromMe: 'true',
   },
   async (dest, zk, commandeOptions) => {
-    const { repondre, ms } = commandeOptions;
+    const name = getName(dest, commandeOptions);
+    
+    // --- Get System Uptime ---
+    const uptimeSeconds = process.uptime();
+    const formattedUptime = formatUptime(uptimeSeconds);
+    
+    // --- Get Last Update Time from GitHub ---
+    const lastUpdate = new Date('2026-06-27T00:00:00Z');
+    const now = new Date();
+    const diffSeconds = Math.floor((now - lastUpdate) / 1000);
+    const formattedLastUpdate = formatUptime(diffSeconds);
+    
+    // --- Measure Ping ---
+    const ping = await measurePing(zk, dest);
+    
+    // --- Format Output ---
+    const uptimeMessage = `◈━━━━━━━━━━━━━━◈
+│❒  *BMB-TECH STATUS*
+│❒ 
+│❒ ⏳ *Uptime:* ${formattedUptime}
+│❒ 
+│❒ 🕒 *Last Updated:* ${formattedLastUpdate} ago
+│❒ 
+│❒ 💻 *System:* ${os.type()} ${os.release()}
+│❒ 
+◈━━━━━━━━━━━━━━◈`;
 
-    try {
-      await zk.sendMessage(dest, {
-        react: { text: "⏳", key: ms.key }
-      });
+    // Constructing the contact message for quoting
+    const con = {
+      key: {
+        fromMe: false,
+        participant: `${dest.sender ? dest.sender.split('@')[0] : "unknown"}@s.whatsapp.net`,
+        ...(dest.chat ? { remoteJid: dest.chat } : {}),
+      },
+      message: {
+        contactMessage: {
+          displayName: name,
+          vcard: `BEGIN:VCARD\nVERSION:3.0\nFN:${name}\nitem1.TEL;waid=${
+            dest.sender ? dest.sender.split('@')[0] : "unknown"
+          }:${
+            dest.sender ? dest.sender.split('@')[0] : "unknown"
+          }\nitem1.X-ABLabel:Mobile\nEND:VCARD`,
+        },
+      },
+    };
 
-      // Get system info
-      const runtime = process.uptime();
-      const days = Math.floor(runtime / 86400);
-      const hours = Math.floor((runtime % 86400) / 3600);
-      const minutes = Math.floor((runtime % 3600) / 60);
-      const seconds = Math.floor(runtime % 60);
-      
-      const formattedRuntime = `${days}d ${hours}h ${minutes}m ${seconds}s`;
-      
-      // Get memory info
-      const totalMemory = (os.totalmem() / (1024 * 1024 * 1024)).toFixed(2);
-      const freeMemory = (os.freemem() / (1024 * 1024 * 1024)).toFixed(2);
-      const usedMemory = (totalMemory - freeMemory).toFixed(2);
-      const memoryPercent = ((usedMemory / totalMemory) * 100).toFixed(1);
-      
-      // Get CPU info
-      const cpuCores = os.cpus().length;
-      const cpuModel = os.cpus()[0]?.model || "Unknown";
-      const loadAvg = os.loadavg();
-      
-      // Get time
-      moment.tz.setDefault("Africa/Nairobi");
-      const currentTime = moment().format("HH:mm:ss");
-      const currentDate = moment().format("DD/MM/YYYY");
-      
-      // Get repo info
-      const branch = await getCurrentBranch();
-      const lastCommitDate = await getLastCommitDate();
-      const lastCommitMsg = await getLastCommitMessage();
-      const repoUrl = await getRepoURL();
-      const commitCount = await getCommitCount();
-      
-      // Get platform
-      const platform = os.platform();
-      const hostname = os.hostname();
+    // Send the formatted message
+    await zk.sendMessage(dest, {
+      text: uptimeMessage,
+      contextInfo: {
+        mentionedJid: [dest.sender || ""],
+        forwardingScore: 999,
+        isForwarded: true,
+      },
+      quoted: con,
+    });
 
-      // Build message
-      const message = `⌚ *BMB-TECH SYSTEM STATUS*
-
-📅 *Date:* ${currentDate}
-🕐 *Time:* ${currentTime} (EAT)
-⏱️ *Uptime:* ${formattedRuntime}
-
-💻 *System Info*
-├─ 🖥️ *OS:* ${platform} (${hostname})
-├─ 🔧 *CPU:* ${cpuModel} (${cpuCores} cores)
-├─ 📊 *Load:* ${loadAvg[0].toFixed(2)} / ${loadAvg[1].toFixed(2)} / ${loadAvg[2].toFixed(2)}
-└─ 🧠 *RAM:* ${usedMemory}GB / ${totalMemory}GB (${memoryPercent}% used)
-
-📦 *Repository Info*
-├─ 🌿 *Branch:* ${branch}
-├─ 🔗 *Repo:* ${repoUrl}
-├─ 📊 *Commits:* ${commitCount}
-├─ 📝 *Last Update:* ${lastCommitDate}
-└─ 💬 *Commit:* ${lastCommitMsg}
-
-🔧 *Bot Status*
-├─ ✅ *Status:* ONLINE
-├─ 📦 *Commands:* ${Object.keys(require("../devbmb/bmbtz").cm || {}).length || 'Loading...'}
-└─ 👑 *Developer:* Bmb Tech
-
-━━━━━━━━━━━━━━━━
-© B.M.B-TECH`;
-
-      // Send message
-      await zk.sendMessage(dest, {
-        text: message,
-        contextInfo: {
-          forwardingScore: 999,
-          isForwarded: true,
-          forwardedNewsletterMessageInfo: {
-            newsletterJid: "120363382023564830@newsletter",
-            newsletterName: "𝙱.𝙼.𝙱-𝚇𝙼𝙳",
-            serverMessageId: 1
-          }
-        }
-      }, { quoted: ms });
-
-      await zk.sendMessage(dest, {
-        react: { text: "✅", key: ms.key }
-      });
-
-    } catch (error) {
-      console.error("Uptime Error:", error);
-      await repondre(`❌ Error: ${error.message}`);
-    }
+    console.log("Uptime with status sent successfully!");
   }
 );
+
+module.exports = {
+  delay,
+};
