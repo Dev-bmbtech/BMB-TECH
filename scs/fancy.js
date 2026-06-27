@@ -27,7 +27,7 @@ END:VCARD`
 bmbtz(
   {
     nomCom: "fancy",
-    categorie: "Fun",
+    categorie: "General",
     reaction: "✍️"
   },
   async (from, conn, context) => {
