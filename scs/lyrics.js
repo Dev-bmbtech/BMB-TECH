@@ -1,94 +1,102 @@
-const { bmbtz } = require("../devbmb/bmbtz");
 const axios = require("axios");
+const { bmbtz } = require("../devbmb/bmbtz");
 
-bmbtz({
-  nomCom: "lyrics",
-  reaction: '🎵',
-  categorie: "Search",
-  aliases: ["lyric", "mistari"]
-}, async (dest, zk, commandeOptions) => {
-  const { repondre, arg, ms } = commandeOptions;
-  const songName = arg.join(" ").trim();
+/* ===== API CONFIG ===== */
+const LYRICS_API = "https://iamtkm.vercel.app/search/lyrics";
+const API_KEY = "tkm";
 
-  if (!songName) {
-    return repondre("❌ Please provide a song name.\nExample: *lyrics Kau masih kekasihku*");
-  }
+/* ===== COMMAND ===== */
+bmbtz(
+  {
+    nomCom: "lyrics",
+    categorie: "Search",
+    reaction: "🎵",
+    alias: ["lyric", "song", "songtxt"]
+  },
+  async (dest, zk, context) => {
+    const { arg, repondre, ms } = context;
 
-  try {
-    // Using the working API from the screenshot
-    const apiUrl = `https://api.deline.web.id/tools/lyrics?title=${encodeURIComponent(songName)}`;
-    const response = await axios.get(apiUrl);
-    
-    // Check if we have valid data
-    if (!response.data || !response.data.title) {
-      return repondre(`❌ Couldn't find lyrics for *${songName}*`);
+    /* ===== HELP ===== */
+    if (!arg[0] || arg[0].toLowerCase() === "help") {
+      return repondre(
+        "🎵 *B.M.B LYRICS*\n\n" +
+        "📌 *Usage:*\n" +
+        "• .lyrics song name\n" +
+        "• .lyrics Blinding Lights\n" +
+        "• .lyrics Bohemian Rhapsody Queen\n\n" +
+        "💡 *Tip:* Enter song title + artist"
+      );
     }
 
-    const { title, artist, lyrics, thumb } = response.data;
-    
-    // Create formatted message
-    let message = `🎵 *LYRICS FOUND* 🎵\n`;
-    message += `◈━━━━━━━━━━━━━━◈\n`;
-    message += `│❒ *Title:* ${title}\n`;
-    message += `│❒ *Artist:* ${artist || 'Unknown'}\n`;
-    message += `◈━━━━━━━━━━━━━━◈\n\n`;
-    
-    // Limit lyrics to prevent message overload (WhatsApp max ~4096 chars)
-    const maxLength = 3500;
-    const lyricsText = lyrics.length > maxLength 
-      ? lyrics.substring(0, maxLength) + '\n\n... [truncated]' 
-      : lyrics;
-    
-    message += lyricsText;
+    const query = arg.join(" ");
 
-    // Try to send with image if available
-    if (thumb) {
-      try {
-        const imageResponse = await axios.get(thumb, { responseType: "arraybuffer" });
-        await zk.sendMessage(dest, {
-          image: Buffer.from(imageResponse.data),
-          caption: message,
-          contextInfo: {
-            mentionedJid: [dest.sender || ""],
-            forwardingScore: 999,
-            isForwarded: true,
-          }
-        }, { quoted: ms });
-      } catch (imgError) {
-        // If image fails, send text only
-        await zk.sendMessage(dest, {
-          text: message,
-          contextInfo: {
-            mentionedJid: [dest.sender || ""],
-            forwardingScore: 999,
-            isForwarded: true,
-          }
-        }, { quoted: ms });
-      }
-    } else {
-      // No image available, send text only
+    try {
+      /* ===== REACT ===== */
       await zk.sendMessage(dest, {
-        text: message,
-        contextInfo: {
-          mentionedJid: [dest.sender || ""],
-          forwardingScore: 999,
-          isForwarded: true,
-        }
-      }, { quoted: ms });
-    }
+        react: { text: "⏳", key: ms.key }
+      });
 
-  } catch (error) {
-    console.error("Lyrics API Error:", error.message);
-    
-    // Handle specific error cases
-    if (error.response && error.response.status === 404) {
-      return repondre(`❌ Song "*${songName}*" not found. Please check the title and try again.`);
+      /* ===== API REQUEST ===== */
+      const res = await axios.get(LYRICS_API, {
+        params: {
+          apikey: API_KEY,
+          song: query
+        },
+        timeout: 35000
+      });
+
+      const data = res.data;
+
+      /* ===== PARSE RESPONSE ===== */
+      let title = "";
+      let artist = "";
+      let lyrics = "";
+
+      if (data?.status && data.result) {
+        title = data.result.title || data.result.song || "";
+        artist = data.result.artist || "";
+        lyrics = data.result.lyrics || data.result.text || "";
+      } else if (data?.lyrics) {
+        lyrics = data.lyrics;
+        title = data.title || query;
+        artist = data.artist || "";
+      } else if (data?.result) {
+        lyrics = typeof data.result === "string" ? data.result : JSON.stringify(data.result);
+      } else {
+        return repondre("❌ Lyrics not found. Try again.");
+      }
+
+      if (!lyrics) {
+        return repondre("❌ Lyrics not available for: " + query);
+      }
+
+      /* ===== TRIM IF TOO LONG ===== */
+      if (lyrics.length > 3000) {
+        lyrics = lyrics.slice(0, 3000) + "\n\n...truncated";
+      }
+
+      /* ===== FINAL MESSAGE ===== */
+      let text = "🎵 *B.M.B LYRICS*\n\n";
+
+      if (title) text += `🎼 *Wimbo:* ${title}\n`;
+      if (artist) text += `🎤 *Msanii:* ${artist}\n`;
+
+      text +=
+        "\n━━━━━━━━━━━━━━━━\n\n" +
+        `${lyrics}\n\n` +
+        "━━━━━━━━━━━━━━━━\n" +
+        "⚡ *Powered by B.M.B TECH*";
+
+      await zk.sendMessage(dest, { text });
+
+    } catch (err) {
+      console.error("LYRICS ERROR:", err.response?.data || err);
+      repondre(
+        "❌ *Lyrics Error*\n\n" +
+        "• API may be down\n" +
+        "• Try again later.\n" +
+        "• Enter the correct song name."
+      );
     }
-    
-    if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
-      return repondre(`⏱️ Request timed out. Please try again later.`);
-    }
-    
-    return repondre(`❌ Error fetching lyrics: ${error.message}`);
   }
-});
+);
