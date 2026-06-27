@@ -6,7 +6,7 @@ const {uploadImageToImgur} = require("../devbmb/imgur")
 function createCanvacordCommand(commandName, canvacordFunction) {
   bmbtz({
     nomCom: commandName,
-    categorie: "search",
+    categorie: "Search",
     reaction: "📸"
   }, async (origineMessage, zk, commandeOptions) => {
     const { ms, msgRepondu, auteurMsgRepondu } = commandeOptions;
