@@ -9,7 +9,7 @@ const API_KEY = "tkm";
 bmbtz(
   {
     nomCom: "gpt",
-    categorie: "AI",
+    categorie: "Search",
     reaction: "🤖",
     alias: ["gpt5", "ai5", "askgpt", "wolfai"]
   },
