@@ -119,7 +119,7 @@ logoCommands.forEach(({ nomCom, categorie, reaction, makerUrl }) => {
 ╰──────────━⊷
 ╭──────────━⊷
   ʙ.ᴍ.ʙ-ᴛᴇᴄʜ ᴄʜᴀɴɴᴇʟ ᴜᴘᴅᴀᴛᴇs
-  ᴛᴀᴘ: https://shorturl.at/3Fls8
+  ᴛᴀᴘ: https://bmbtech.zone.id
 ╰──────────━⊷
 
 > 𝙱.𝙼.𝙱-𝚇𝙼𝙳
