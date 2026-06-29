@@ -1,7 +1,6 @@
 const { bmbtz } = require("../devbmb/bmbtz");
 const s = require("../settings");
 const fs = require('fs');
-const Heroku = require('heroku-client');
 
 // Newsletter / forwarded context (change these values to your newsletter JID / name)
 const NEWSLETTER_JID = "120363382023564830@newsletter";
@@ -39,23 +38,11 @@ ${message}
   }
 }
 
-// Function to get a description of an environment variable
-function getDescriptionFromEnv(varName) {
-  try {
-    const filePath = "./app.json";
-    const fileContent = fs.readFileSync(filePath, 'utf-8');
-    const config = JSON.parse(fileContent);
-    return config.env[varName]?.description || "The environment variable description was not found.";
-  } catch (err) {
-    return "Could not read app.json to get environment variable description.";
-  }
-}
-
 // Generic pattern for toggles to avoid repetition
 function registerToggleCommand(commandName, settingKey, enabledValue, disabledValue, title, enabledText, disabledText, preserveQuotedHelp = false) {
   bmbtz({
     nomCom: commandName,
-    categorie: "heroku-client"
+    categorie: "Settings"
   }, async (chatId, zk, context) => {
     const { ms, repondre, superUser, arg } = context;
 
@@ -191,17 +178,6 @@ registerToggleCommand(
   "❌ Auto-reply (greet) has been *disabled* successfully."
 );
 
-// publicmode
-registerToggleCommand(
-  "publicmode",
-  "MODE",
-  "on",
-  "off",
-  "PUBLIC MODE",
-  "✅ Public mode has been *enabled* successfully.",
-  "❌ Public mode has been *disabled* successfully."
-);
-
 // autorecord (uses numeric state for enabled)
 registerToggleCommand(
   "autorecord",
@@ -235,16 +211,37 @@ registerToggleCommand(
   "❌ Always-online has been *disabled* successfully."
 );
 
-// privatemode (flipped: enabling private sets MODE to 'off', disabling sets 'on' = public)
-registerToggleCommand(
-  "privatemode",
-  "MODE",
-  "off",
-  "on",
-  "PRIVATE MODE",
-  "✅ Private mode has been *enabled* successfully.",
-  "❌ Private mode has been *disabled* successfully."
-);
+// mode (public / private) - single command for MODE
+bmbtz({
+  nomCom: "mode",
+  categorie: "settings"
+}, async (chatId, zk, context) => {
+  const { ms, repondre, superUser, arg } = context;
+
+  if (!superUser) {
+    return repondre("*This command is only allowed to be controlled by the owner.👤");
+  }
+
+  if (!arg[0]) {
+    const help = `👉 Usage:\n- Type: *mode public*  → bot will reply to everyone\n- Type: *mode private* → bot will reply to owner/sudo only`;
+    return sendBox(chatId, zk, ms, "BOT MODE", help);
+  }
+
+  const option = arg.join(" ").toLowerCase();
+
+  switch (option) {
+    case "public":
+      s.MODE = "on";
+      return sendBox(chatId, zk, ms, "BOT MODE", "✅ Bot is now in *Public Mode* — it will reply to everyone.");
+
+    case "private":
+      s.MODE = "off";
+      return sendBox(chatId, zk, ms, "BOT MODE", "🔒 Bot is now in *Private Mode* — it will reply to owner/sudo only.");
+
+    default:
+      return sendBox(chatId, zk, ms, "BOT MODE", "❌ Invalid option.\nUse: *mode public* or *mode private*.");
+  }
+});
 
 // autolikestatus
 registerToggleCommand(
@@ -268,46 +265,36 @@ registerToggleCommand(
   "❌ Chatbot has been *disabled* successfully."
 );
 
-//=============== HEROKU VARS CHANGER ===============//
+//=============== SET PREFIX ===============//
 
-// Function to change Heroku environment variables
-function changevars(commandName, varName) {
-  bmbtz({
-    nomCom: commandName,
-    categorie: 'heroku-client'
-  }, async (chatId, zk, context) => {
-    const { arg, superUser, repondre } = context;
-    
-    if (!superUser) {
-      repondre("This command is for my owner only!");
-      return;
-    }
+bmbtz({
+  nomCom: "setprefix",
+  categorie: "Settings"
+}, async (chatId, zk, context) => {
+  const { ms, repondre, superUser, arg } = context;
 
-    if (!s.HEROKU_APP_NAME || !s.HEROKU_API_KEY) {
-      repondre("Fill in the HEROKU_APP_NAME and HEROKU_API_KEY environment variables");
-      return;
-    }
+  if (!superUser) {
+    return repondre("*This command is only allowed to be controlled by the owner.👤");
+  }
 
-    if (!arg[0]) {
-      repondre(getDescriptionFromEnv(varName));
-      return;
-    }
+  if (!arg[0]) {
+    const help = `👉 Usage:\n- Type: *setprefix <newprefix>*\n\nCurrent prefix: *${s.PREFIXE}*`;
+    return sendBox(chatId, zk, ms, "SET PREFIX", help);
+  }
 
-    const heroku = new Heroku({ token: s.HEROKU_API_KEY });
-    try {
-      await heroku.patch(`/apps/${s.HEROKU_APP_NAME}/config-vars`, {
-        body: {
-          [varName]: arg.join(" ")
-        }
-      });
+  const newPrefix = arg[0];
 
-      repondre("That Heroku variable is changing, The bot is restarting....");
-    } catch (err) {
-      console.error("Error changing Heroku config var:", err);
-      repondre("⚠️ Failed to change Heroku config variable. Check logs and credentials.");
-    }
-  });
-}
+  if (!newPrefix || /\s/.test(newPrefix)) {
+    return sendBox(chatId, zk, ms, "SET PREFIX", "❌ Write prefix without spaces, example: *setprefix !*");
+  }
 
-changevars("setprefix", "PREFIXES");
-changevars("menulinks", "BOT_MENU_LINKS");
+  s.PREFIXE = newPrefix;
+
+  return sendBox(
+    chatId,
+    zk,
+    ms,
+    "SET PREFIX",
+    `✅ Prefix has been changed to: *${newPrefix}*\n\nChanges are now active, no restart needed.`
+  );
+});
