@@ -30,7 +30,7 @@ bmbtz({
   nomCom: "blocklist",
   aliases: ["listblock", "blacklist"],
   reaction: '☘️',
-  categorie: "search"
+  categorie: "Settings"
 }, async (dest, zk, commandeOptions) => {
   const { repondre } = commandeOptions;
 
