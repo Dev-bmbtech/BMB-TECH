@@ -6,7 +6,7 @@ const path = require("path");
 
 bmbtz({
   nomCom: "getcmd",
-  categorie: "download",
+  categorie: "Download",
   reaction: "📂",
   desc: "Get command file information and code"
 }, async (dest, zk, commandeOptions) => {
