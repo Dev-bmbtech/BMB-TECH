@@ -214,7 +214,7 @@ registerToggleCommand(
 // mode (public / private) - single command for MODE
 bmbtz({
   nomCom: "mode",
-  categorie: "settings"
+  categorie: "Settings"
 }, async (chatId, zk, context) => {
   const { ms, repondre, superUser, arg } = context;
 
