@@ -20,7 +20,7 @@ function generateShortId(length = 6) {
 
 bmbtz({
   nomCom: "url",
-  categorie: "Utility",
+  categorie: "General",
   reaction: "🖇",
   desc: "Convert media to BMB URL"
 }, async (dest, zk, commandeOptions) => {
