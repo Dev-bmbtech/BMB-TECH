@@ -92,115 +92,129 @@ bmbtz({ nomCom: "link", categorie: 'Group', reaction: "🙋" }, async (dest, zk,
 
 });
 /** *nommer un membre comme admin */
-bmbtz({ nomCom: "promote", categorie: 'Group', reaction: "👨🏿‍💼" }, async (dest, zk, commandeOptions) => {
+bmbtz({ nomCom: "promote", categorie: 'Group', reaction: "🔃" }, async (dest, zk, commandeOptions) => {
   let { repondre, msgRepondu, infosGroupe, auteurMsgRepondu, verifGroupe, auteurMessage, superUser, idBot } = commandeOptions;
-  let membresGroupe = verifGroupe ? await infosGroupe.participants : [];
+  let membresGroupe = verifGroupe ? await infosGroupe.participants : ""
+  if (!verifGroupe) { return repondre("For groups only"); }
 
-  if (!verifGroupe) return repondre("🚫 *This command works in groups only.*");
 
-  const verifMember = (user) => membresGroupe.some(m => m.id === user);
-  const memberAdmin = (membresGroupe) => membresGroupe.filter(m => m.admin).map(m => m.id);
+  const verifMember = (user) => {
 
-  const admins = memberAdmin(membresGroupe);
-  const isTargetAdmin = admins.includes(auteurMsgRepondu);
-  const isTargetMember = verifMember(auteurMsgRepondu);
-  const isSenderAdmin = admins.includes(auteurMessage);
-  const isBotAdmin = admins.includes(idBot);
-
-  try {
-    if (isSenderAdmin || superUser) {
-      if (msgRepondu) {
-        if (isBotAdmin) {
-          if (isTargetMember) {
-            if (!isTargetAdmin) {
-              await zk.groupParticipantsUpdate(dest, [auteurMsgRepondu], "promote");
-
-              let txt =
-`╭──❰ *PROMOTION NOTICE* ❱──╮
-│
-│ 🎉 @${auteurMsgRepondu.split("@")[0]} has been 
-│ ⬆️ *Promoted to Admin* successfully.
-│ 👤 By: *@${auteurMessage.split("@")[0]}*
-│
-╰─────────────────────────╯`;
-
-              zk.sendMessage(dest, { text: txt, mentions: [auteurMsgRepondu, auteurMessage] });
-
-            } else {
-              repondre("⚠️ This member is already an admin.");
-            }
-          } else {
-            repondre("❌ This user is not part of the group.");
-          }
-        } else {
-          repondre("🛑 I need admin rights to promote members.");
-        }
-      } else {
-        repondre("👉 Please *tag the member* to promote.");
+    for (const m of membresGroupe) {
+      if (m.id !== user) {
+        continue;
       }
-    } else {
-      repondre("🚫 You must be a group admin to use this command.");
+      else { return true }
+      //membre=//(m.id==auteurMsgRepondu? return true) :false;
     }
-  } catch (e) {
-    repondre("❗ *Error occurred:* " + e);
   }
-});
+
+  const memberAdmin = (membresGroupe) => {
+    let admin = [];
+    for (m of membresGroupe) {
+      if (m.admin == null) continue;
+      admin.push(m.id);
+
+    }
+    // else{admin= false;}
+    return admin;
+  }
+
+  const a = verifGroupe ? memberAdmin(membresGroupe) : '';
+
+
+  let admin = verifGroupe ? a.includes(auteurMsgRepondu) : false;
+  let membre = verifMember(auteurMsgRepondu)
+  let autAdmin = verifGroupe ? a.includes(auteurMessage) : false;
+  zkad = verifGroupe ? a.includes(idBot) : false;
+  try {
+    // repondre(verifbmbtzAdmin)
+
+    if (autAdmin || superUser) {
+      if (msgRepondu) {
+        if (zkad) {
+          if (membre) {
+            if (admin == false) {
+              var txt = `🎊🎊🎊  @${auteurMsgRepondu.split("@")[0]} rose in rank.\n
+                      he/she has been named group administrator.`
+              await zk.groupParticipantsUpdate(dest, [auteurMsgRepondu], "promote");
+              zk.sendMessage(dest, { text: txt, mentions: [auteurMsgRepondu] })
+            } else { return repondre("This member is already an administrator of the group.") }
+
+          } else { return repondre("This user is not part of the group."); }
+        }
+        else { return repondre("Sorry, I cannot perform this action because I am not an administrator of the group.") }
+
+      } else { repondre("please tag the member to be nominated"); }
+    } else { return repondre("Sorry I cannot perform this action because you are not an administrator of the group.") }
+  } catch (e) { repondre("oups " + e) }
+
+})
+
 //fin nommer
 /** ***demettre */
 
-bmbtz({ nomCom: "demote", categorie: 'Group', reaction: "👨🏿‍💼" }, async (dest, zk, commandeOptions) => {
+bmbtz({ nomCom: "demote", categorie: 'Group', reaction: "🔃" }, async (dest, zk, commandeOptions) => {
   let { repondre, msgRepondu, infosGroupe, auteurMsgRepondu, verifGroupe, auteurMessage, superUser, idBot } = commandeOptions;
-  let membresGroupe = verifGroupe ? await infosGroupe.participants : [];
+  let membresGroupe = verifGroupe ? await infosGroupe.participants : ""
+  if (!verifGroupe) { return repondre("For groups only"); }
 
-  if (!verifGroupe) return repondre("🚫 *This command works in groups only.*");
 
-  const verifMember = (user) => membresGroupe.some(m => m.id === user);
-  const memberAdmin = (membresGroupe) => membresGroupe.filter(m => m.admin).map(m => m.id);
+  const verifMember = (user) => {
 
-  const admins = memberAdmin(membresGroupe);
-  const isTargetAdmin = admins.includes(auteurMsgRepondu);
-  const isTargetMember = verifMember(auteurMsgRepondu);
-  const isSenderAdmin = admins.includes(auteurMessage);
-  const isBotAdmin = admins.includes(idBot);
+    for (const m of membresGroupe) {
+      if (m.id !== user) {
+        continue;
+      }
+      else { return true }
+      //membre=//(m.id==auteurMsgRepondu? return true) :false;
+    }
+  }
 
+  const memberAdmin = (membresGroupe) => {
+    let admin = [];
+    for (m of membresGroupe) {
+      if (m.admin == null) continue;
+      admin.push(m.id);
+
+    }
+    // else{admin= false;}
+    return admin;
+  }
+
+  const a = verifGroupe ? memberAdmin(membresGroupe) : '';
+
+
+  let admin = verifGroupe ? a.includes(auteurMsgRepondu) : false;
+  let membre = verifMember(auteurMsgRepondu)
+  let autAdmin = verifGroupe ? a.includes(auteurMessage) : false;
+  zkad = verifGroupe ? a.includes(idBot) : false;
   try {
-    if (isSenderAdmin || superUser) {
+    // repondre(verifbmbtzAdmin)
+
+    if (autAdmin || superUser) {
       if (msgRepondu) {
-        if (isBotAdmin) {
-          if (isTargetMember) {
-            if (isTargetAdmin) {
-              await zk.groupParticipantsUpdate(dest, [auteurMsgRepondu], "demote");
+        if (zkad) {
+          if (membre) {
+            if (admin == false) {
 
-              let txt =
-`╭──❰ *DEMOTION NOTICE* ❱──╮
-│
-│ ⚠️ @${auteurMsgRepondu.split("@")[0]} has been 
-│ 🔽 *Demoted from Admin role.*
-│ 👤 By: *@${auteurMessage.split("@")[0]}*
-│
-╰────────────────────────╯`;
-
-              zk.sendMessage(dest, { text: txt, mentions: [auteurMsgRepondu, auteurMessage] });
+              repondre("This member is not a group administrator.")
 
             } else {
-              repondre("ℹ️ This member is not an admin.");
+              var txt = `@${auteurMsgRepondu.split("@")[0]} was removed from his position as a group administrator\n`
+              await zk.groupParticipantsUpdate(dest, [auteurMsgRepondu], "demote");
+              zk.sendMessage(dest, { text: txt, mentions: [auteurMsgRepondu] })
             }
-          } else {
-            repondre("❌ This user is not part of the group.");
-          }
-        } else {
-          repondre("🛑 I need admin rights to demote members.");
+
+          } else { return repondre("This user is not part of the group."); }
         }
-      } else {
-        repondre("👉 Please *tag the member* to demote.");
-      }
-    } else {
-      repondre("🚫 You must be a group admin to use this command.");
-    }
-  } catch (e) {
-    repondre("❗ *Error occurred:* " + e);
-  }
-});
+        else { return repondre("Sorry I cannot perform this action because I am not an administrator of the group.") }
+
+      } else { repondre("please tag the member to be removed"); }
+    } else { return repondre("Sorry I cannot perform this action because you are not an administrator of the group.") }
+  } catch (e) { repondre("oups " + e) }
+
+})
 
 
 /** ***fin démettre****  **/
@@ -241,7 +255,7 @@ bmbtz({ nomCom: "remove", categorie: 'Group', reaction: "🦵" }, async (dest, z
   let autAdmin = verifGroupe ? a.includes(auteurMessage) : false;
   zkad = verifGroupe ? a.includes(idBot) : false;
   try {
-    // repondre(verifZokouAdmin)
+    // repondre(verifbmbtzAdmin)
 
     if (autAdmin || superUser) {
       if (msgRepondu) {
