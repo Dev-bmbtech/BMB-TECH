@@ -1,79 +1,64 @@
-const { bmbtz } = require("../devbmb/bmbtz");
-const axios = require("axios");
+const { bmbtz } = require('../devbmb/bmbtz');
+const axios = require('axios');
 
-const BASE_URL = "https://noobs-api.top";
-const BOT = "B.M.B-TECH";
-const NEWSLETTER_JID = "120363382023564830@newsletter";
-const NEWSLETTER_NAME = "Bmb Tech Info";
-
-/* ===================== CONTEXT ===================== */
-const getContextInfo = (query = "") => ({
-  forwardingScore: 1,
-  isForwarded: true,
-  forwardedNewsletterMessageInfo: {
-    newsletterJid: NEWSLETTER_JID,
-    newsletterName: NEWSLETTER_NAME,
-    serverMessageId: -1
+// VCard Contact
+const quotedContact = {
+  key: {
+    fromMe: false,
+    participant: `0@s.whatsapp.net`,
+    remoteJid: "status@broadcast"
   },
-  body: query ? `Requested: ${query}` : undefined,
-  title: BOT
-});
-
-/* ===================== GOOGLE IMAGE SEARCH (5 IMAGES) ===================== */
-bmbtz(
-  { nomCom: "img", categorie: "Search", reaction: "🔍" },
-  async (origineMessage, zk, commandeOptions) => {
-    const { ms, arg, repondre } = commandeOptions;
-    const query = arg.join(" ");
-    
-    if (!query)
-      return zk.sendMessage(
-        origineMessage,
-        { text: "Please provide an image name.\nExample: .img luxury cars", contextInfo: getContextInfo() },
-        { quoted: ms }
-      );
-
-    try {
-      repondre(`⏳ Searching for images of "${query}"... Please wait.`);
-
-      // Fetching images from noobs-api.top
-      const apiURL = `${BASE_URL}/dipto/googleImage?text=${encodeURIComponent(query)}`;
-      const { data } = await axios.get(apiURL);
-
-      // Check if data exists and contains the results array
-      if (!data || !data.result || data.result.length === 0) {
-        return zk.sendMessage(
-          origineMessage,
-          { text: "❌ Sorry, no results found for that search.", contextInfo: getContextInfo() },
-          { quoted: ms }
-        );
-      }
-
-      // Limit results to a maximum of 5 images
-      const maxImages = Math.min(data.result.length, 5);
-
-      for (let i = 0; i < maxImages; i++) {
-        const imageUrl = data.result[i];
-
-        // Send each image to WhatsApp
-        await zk.sendMessage(
-          origineMessage,
-          {
-            image: { url: imageUrl },
-            caption: `🖼️ *Image ${i + 1} of:* ${query}\n\n> Powered by 𝙱.𝙼.𝙱-𝚃𝙴𝙲𝙷 🤖`,
-            contextInfo: getContextInfo(query)
-          },
-          { quoted: ms }
-        );
-      }
-
-    } catch (e) {
-      console.error("[IMAGE SEARCH ERROR]", e);
-      zk.sendMessage(
-        origineMessage,
-        { text: "❌ An error occurred while searching for the image.", contextInfo: getContextInfo() },
-        { quoted: ms }
-      );
+  message: {
+    contactMessage: {
+      displayName: "B.M.B VERIFIED ✅",
+      vcard: "BEGIN:VCARD\nVERSION:3.0\nFN:B.M.B VERIFIED ✅\nORG:BMB-TECH BOT;\nTEL;type=CELL;type=VOICE;waid=255767862457:+255767862457\nEND:VCARD"
     }
   }
-);
+};
+
+// Newsletter context
+const contextInfo = {
+  forwardingScore: 999,
+  isForwarded: true,
+  forwardedNewsletterMessageInfo: {
+    newsletterJid: "120363382023564830@newsletter",
+    newsletterName: "𝙱.𝙼.𝙱-𝚇𝙼𝙳",
+    serverMessageId: 1
+  }
+};
+
+bmbtz({
+  nomCom: "img",
+  categorie: "Search",
+  reaction: "📷"
+}, async (dest, zk, commandeOptions) => {
+  const { repondre, ms, arg } = commandeOptions;
+
+  if (!arg[0]) {
+    return repondre('❌ Please specify an image search term!');
+  }
+
+  const searchTerm = arg.join(" ");
+
+  try {
+    const apiUrl = `https://api.gifted.co.ke/api/search/googleimage?apikey=gifted&query=${encodeURIComponent(searchTerm)}`;
+    const { data } = await axios.get(apiUrl);
+
+    if (!data || !data.success || !data.results || data.results.length === 0) {
+      return repondre('❌ No images found for your query.');
+    }
+
+    const results = data.results;
+    // Send up to 5 images
+    const sendCount = Math.min(results.length, 5);
+    for (let i = 0; i < sendCount; i++) {
+      await zk.sendMessage(dest, {
+        image: { url: results[i] },
+        contextInfo
+      }, { quoted: ms });
+    }
+  } catch (err) {
+    console.error(err);
+    return repondre('❌ An error occurred while searching for images.');
+  }
+});
