@@ -1,10 +1,22 @@
 const axios = require("axios");
+const pkg = require("@whiskeysockets/baileys");
+const { generateWAMessageFromContent, proto } = pkg;
 const { bmbtz } = require("../devbmb/bmbtz");
 
 /* ===== API CONFIG ===== */
 const LYRICS_API_V2 = "https://api.gifted.co.ke/api/search/lyricsv2";
 const LYRICS_API_V1 = "https://api.gifted.co.ke/api/search/lyrics";
 const API_KEY = "gifted";
+
+/* ===== HELPER: Clean Lyrics Formatting ===== */
+function cleanLyrics(text) {
+  return text
+    .replace(/\r\n/g, "\n")          // normalize line endings
+    .replace(/\n{3,}/g, "\n\n")      // max 1 blank line between verses
+    .replace(/[ \t]+\n/g, "\n")      // remove trailing spaces before newline
+    .replace(/\n[ \t]+/g, "\n")      // remove leading spaces after newline
+    .trim();
+}
 
 /* ===== COMMAND ===== */
 bmbtz(
@@ -71,32 +83,84 @@ bmbtz(
       }
 
       /* ===== PARSE RESPONSE ===== */
-      let title = data.result.title || "";
-      let artist = data.result.artist || "";
+      let title = data.result.title || query;
+      let artist = data.result.artist || "Unknown";
+      let album = data.result.album || title;
       let lyrics = data.result.lyrics || "";
 
       if (!lyrics) {
         return repondre("❌ Lyrics not available for: " + query);
       }
 
-      /* ===== TRIM IF TOO LONG ===== */
-      if (lyrics.length > 3000) {
-        lyrics = lyrics.slice(0, 3000) + "\n\n...truncated";
+      /* ===== CLEAN FORMATTING ===== */
+      lyrics = cleanLyrics(lyrics);
+
+      /* ===== TRIM IF TOO LONG (for display) ===== */
+      let displayLyrics = lyrics;
+      if (displayLyrics.length > 3000) {
+        displayLyrics = displayLyrics.slice(0, 3000) + "\n\n...truncated";
       }
 
-      /* ===== FINAL MESSAGE ===== */
-      let text = "🎵 *B.M.B LYRICS*\n\n";
+      /* ===== FINAL MESSAGE (Song Details Box) ===== */
+      const textMessage =
+        "「 *LYRICS FINDER* 」\n\n" +
+        "╭──⦿「 *Song Details* 」\n" +
+        `├─≫ 🎵 *Title* : ${title}\n` +
+        `├─≫ 👤 *Artist* : ${artist}\n` +
+        `├─≫ 💿 *Album* : ${album}\n` +
+        "╰──────────────⦿\n\n" +
+        `${displayLyrics}\n\n` +
+        "⚡ *Powered by bmb tech*";
 
-      if (title) text += `🎼 *Song:* ${title}\n`;
-      if (artist) text += `🎤 *Artist:* ${artist}\n`;
+      /* ===== COPY BUTTON ===== */
+      const buttons = [
+        {
+          name: "cta_copy",
+          buttonParamsJson: JSON.stringify({
+            display_text: "📋 COPY LYRICS",
+            copy_code: lyrics
+          })
+        }
+      ];
 
-      text +=
-        "\n━━━━━━━━━━━━━━━━\n\n" +
-        `${lyrics}\n\n` +
-        "━━━━━━━━━━━━━━━━\n" +
-        "⚡ *Powered by B.M.B TECH*";
+      const viewOnceMessage = {
+        viewOnceMessage: {
+          message: {
+            messageContextInfo: {
+              deviceListMetadata: {},
+              deviceListMetadataVersion: 2
+            },
+            interactiveMessage:
+              proto.Message.InteractiveMessage.create({
+                body: proto.Message.InteractiveMessage.Body.create({
+                  text: textMessage
+                }),
+                footer: proto.Message.InteractiveMessage.Footer.create({
+                  text: "© BMB-TECH"
+                }),
+                header: proto.Message.InteractiveMessage.Header.create({
+                  title: "",
+                  subtitle: "",
+                  hasMediaAttachment: false
+                }),
+                nativeFlowMessage:
+                  proto.Message.InteractiveMessage.NativeFlowMessage.create({
+                    buttons
+                  })
+              })
+          }
+        }
+      };
 
-      await zk.sendMessage(dest, { text });
+      const waMsg = generateWAMessageFromContent(dest, viewOnceMessage, {});
+
+      await zk.relayMessage(dest, waMsg.message, {
+        messageId: waMsg.key.id
+      });
+
+      await zk.sendMessage(dest, {
+        react: { text: "✅", key: ms.key }
+      });
 
     } catch (err) {
       console.error("LYRICS ERROR:", err.response?.data || err);
