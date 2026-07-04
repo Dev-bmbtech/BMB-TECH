@@ -3,7 +3,7 @@ const pkg = require("@whiskeysockets/baileys");
 const { generateWAMessageFromContent, proto, prepareWAMessageMedia } = pkg;
 
 bmbtz({
-  nomCom: "channel",
+  nomCom: "id",
   alias: ["newsletter", "id"],
   reaction: "📡",
   desc: "Get WhatsApp Channel info from link",
