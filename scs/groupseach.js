@@ -4,7 +4,7 @@ const axios = require("axios");
 const GROUP_SEARCH_API = "https://api.deline.web.id/search/grubwa";
 
 bmbtz({
-  nomCom: "grupsearch",
+  nomCom: "groupsearch",
   alias: ["gsearch", "groupsearch"],
   reaction: "🔍",
   desc: "Search public WhatsApp group links",
