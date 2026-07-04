@@ -2,8 +2,9 @@ const axios = require("axios");
 const { bmbtz } = require("../devbmb/bmbtz");
 
 /* ===== API CONFIG ===== */
-const LYRICS_API = "https://iamtkm.vercel.app/search/lyrics";
-const API_KEY = "tkm";
+const LYRICS_API_V2 = "https://api.gifted.co.ke/api/search/lyricsv2";
+const LYRICS_API_V1 = "https://api.gifted.co.ke/api/search/lyrics";
+const API_KEY = "gifted";
 
 /* ===== COMMAND ===== */
 bmbtz(
@@ -36,35 +37,43 @@ bmbtz(
         react: { text: "⏳", key: ms.key }
       });
 
-      /* ===== API REQUEST ===== */
-      const res = await axios.get(LYRICS_API, {
-        params: {
-          apikey: API_KEY,
-          song: query
-        },
-        timeout: 35000
-      });
+      /* ===== API REQUEST (try v2 first, then v1) ===== */
+      let data;
 
-      const data = res.data;
+      try {
+        const res = await axios.get(LYRICS_API_V2, {
+          params: { apikey: API_KEY, query },
+          timeout: 35000
+        });
+        if (res.data?.success && res.data?.result?.lyrics) {
+          data = res.data;
+        }
+      } catch (e) {
+        console.error("lyricsv2 failed:", e.message);
+      }
 
-      /* ===== PARSE RESPONSE ===== */
-      let title = "";
-      let artist = "";
-      let lyrics = "";
+      if (!data) {
+        try {
+          const res = await axios.get(LYRICS_API_V1, {
+            params: { apikey: API_KEY, query },
+            timeout: 35000
+          });
+          if (res.data?.success && res.data?.result?.lyrics) {
+            data = res.data;
+          }
+        } catch (e) {
+          console.error("lyrics v1 failed:", e.message);
+        }
+      }
 
-      if (data?.status && data.result) {
-        title = data.result.title || data.result.song || "";
-        artist = data.result.artist || "";
-        lyrics = data.result.lyrics || data.result.text || "";
-      } else if (data?.lyrics) {
-        lyrics = data.lyrics;
-        title = data.title || query;
-        artist = data.artist || "";
-      } else if (data?.result) {
-        lyrics = typeof data.result === "string" ? data.result : JSON.stringify(data.result);
-      } else {
+      if (!data) {
         return repondre("❌ Lyrics not found. Try again.");
       }
+
+      /* ===== PARSE RESPONSE ===== */
+      let title = data.result.title || "";
+      let artist = data.result.artist || "";
+      let lyrics = data.result.lyrics || "";
 
       if (!lyrics) {
         return repondre("❌ Lyrics not available for: " + query);
@@ -78,8 +87,8 @@ bmbtz(
       /* ===== FINAL MESSAGE ===== */
       let text = "🎵 *B.M.B LYRICS*\n\n";
 
-      if (title) text += `🎼 *Wimbo:* ${title}\n`;
-      if (artist) text += `🎤 *Msanii:* ${artist}\n`;
+      if (title) text += `🎼 *Song:* ${title}\n`;
+      if (artist) text += `🎤 *Artist:* ${artist}\n`;
 
       text +=
         "\n━━━━━━━━━━━━━━━━\n\n" +
