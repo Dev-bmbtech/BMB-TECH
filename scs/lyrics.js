@@ -4,19 +4,7 @@ const { generateWAMessageFromContent, proto } = pkg;
 const { bmbtz } = require("../devbmb/bmbtz");
 
 /* ===== API CONFIG ===== */
-const LYRICS_API_V2 = "https://api.gifted.co.ke/api/search/lyricsv2";
-const LYRICS_API_V1 = "https://api.gifted.co.ke/api/search/lyrics";
-const API_KEY = "gifted";
-
-/* ===== HELPER: Clean Lyrics Formatting ===== */
-function cleanLyrics(text) {
-  return text
-    .replace(/\r\n/g, "\n")          // normalize line endings
-    .replace(/\n{3,}/g, "\n\n")      // max 1 blank line between verses
-    .replace(/[ \t]+\n/g, "\n")      // remove trailing spaces before newline
-    .replace(/\n[ \t]+/g, "\n")      // remove leading spaces after newline
-    .trim();
-}
+const LYRICS_API = "https://api.deline.web.id/tools/lyrics";
 
 /* ===== COMMAND ===== */
 bmbtz(
@@ -49,51 +37,27 @@ bmbtz(
         react: { text: "⏳", key: ms.key }
       });
 
-      /* ===== API REQUEST (try v2 first, then v1) ===== */
-      let data;
+      /* ===== API REQUEST ===== */
+      const { data } = await axios.get(LYRICS_API, {
+        params: { title: query },
+        timeout: 35000
+      });
 
-      try {
-        const res = await axios.get(LYRICS_API_V2, {
-          params: { apikey: API_KEY, query },
-          timeout: 35000
-        });
-        if (res.data?.success && res.data?.result?.lyrics) {
-          data = res.data;
-        }
-      } catch (e) {
-        console.error("lyricsv2 failed:", e.message);
+      if (!data?.status || !data?.result || data.result.length === 0) {
+        await zk.sendMessage(dest, { react: { text: "❌", key: ms.key } });
+        return repondre("❌ Lyrics not found for: " + query);
       }
 
-      if (!data) {
-        try {
-          const res = await axios.get(LYRICS_API_V1, {
-            params: { apikey: API_KEY, query },
-            timeout: 35000
-          });
-          if (res.data?.success && res.data?.result?.lyrics) {
-            data = res.data;
-          }
-        } catch (e) {
-          console.error("lyrics v1 failed:", e.message);
-        }
-      }
-
-      if (!data) {
-        return repondre("❌ Lyrics not found. Try again.");
-      }
-
-      /* ===== PARSE RESPONSE ===== */
-      let title = data.result.title || query;
-      let artist = data.result.artist || "Unknown";
-      let album = data.result.album || title;
-      let lyrics = data.result.lyrics || "";
+      const song = data.result[0];
+      const title = song.name || query;
+      const artist = song.artistName || "Unknown";
+      const album = song.albumName || "N/A";
+      const lyrics = song.plainLyrics || "";
 
       if (!lyrics) {
+        await zk.sendMessage(dest, { react: { text: "❌", key: ms.key } });
         return repondre("❌ Lyrics not available for: " + query);
       }
-
-      /* ===== CLEAN FORMATTING ===== */
-      lyrics = cleanLyrics(lyrics);
 
       /* ===== TRIM IF TOO LONG (for display) ===== */
       let displayLyrics = lyrics;
@@ -110,7 +74,7 @@ bmbtz(
         `├─≫ 💿 *Album* : ${album}\n` +
         "╰──────────────⦿\n\n" +
         `${displayLyrics}\n\n` +
-        "⚡ *Powered by bmb tech*";
+        "⚡ *Powered by B.M.B TECH*";
 
       /* ===== COPY BUTTON ===== */
       const buttons = [
@@ -136,7 +100,7 @@ bmbtz(
                   text: textMessage
                 }),
                 footer: proto.Message.InteractiveMessage.Footer.create({
-                  text: "© BMB-TECH"
+                  text: "© B.M.B-TECH"
                 }),
                 header: proto.Message.InteractiveMessage.Header.create({
                   title: "",
@@ -164,6 +128,7 @@ bmbtz(
 
     } catch (err) {
       console.error("LYRICS ERROR:", err.response?.data || err);
+      await zk.sendMessage(dest, { react: { text: "❌", key: ms.key } });
       repondre(
         "❌ *Lyrics Error*\n\n" +
         "• API may be down\n" +
