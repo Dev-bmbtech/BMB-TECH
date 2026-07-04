@@ -1,9 +1,9 @@
 const { bmbtz } = require("../devbmb/bmbtz");
 const pkg = require("@whiskeysockets/baileys");
-const { generateWAMessageFromContent, proto } = pkg;
+const { generateWAMessageFromContent, proto, prepareWAMessageMedia } = pkg;
 
 bmbtz({
-  nomCom: "id",
+  nomCom: "channel",
   alias: ["newsletter", "id"],
   reaction: "📡",
   desc: "Get WhatsApp Channel info from link",
@@ -46,6 +46,26 @@ bmbtz({
       }
     ];
 
+    /* ===== BUILD HEADER (with or without image) ===== */
+    let headerProps = {
+      title: metadata.preview ? "" : infoText,
+      subtitle: "",
+      hasMediaAttachment: false
+    };
+
+    if (metadata.preview) {
+      const media = await prepareWAMessageMedia(
+        { image: { url: `https://pps.whatsapp.net${metadata.preview}` } },
+        { upload: zk.waUploadToServer }
+      );
+      headerProps = {
+        ...proto.Message.InteractiveMessage.Header.fromObject({
+          hasMediaAttachment: true,
+          ...media
+        })
+      };
+    }
+
     const viewOnceMessage = {
       viewOnceMessage: {
         message: {
@@ -61,20 +81,7 @@ bmbtz({
               footer: proto.Message.InteractiveMessage.Footer.create({
                 text: "© B.M.B-TECH"
               }),
-              header: metadata.preview
-                ? proto.Message.InteractiveMessage.Header.create({
-                    title: "",
-                    subtitle: "",
-                    hasMediaAttachment: true,
-                    imageMessage: {
-                      url: `https://pps.whatsapp.net${metadata.preview}`
-                    }
-                  })
-                : proto.Message.InteractiveMessage.Header.create({
-                    title: "",
-                    subtitle: "",
-                    hasMediaAttachment: false
-                  }),
+              header: proto.Message.InteractiveMessage.Header.create(headerProps),
               nativeFlowMessage:
                 proto.Message.InteractiveMessage.NativeFlowMessage.create({
                   buttons
