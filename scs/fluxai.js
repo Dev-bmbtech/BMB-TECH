@@ -39,7 +39,7 @@ bmbtz({
   await repondre("> *𝙲𝚁𝙴𝙰𝚃𝙸𝙽𝙶 𝙿𝙷𝙾𝚃𝙾 📸*");
 
   try {
-    const url = `https://api.siputzx.my.id/api/ai/flux?prompt=${encodeURIComponent(q)}`;
+    const url = `https://iamtkm.vercel.app/ai/NanoBanana?apikey=tkm&prompt=${encodeURIComponent(q)}`;
     const { data } = await axios.get(url, { responseType: "arraybuffer" });
 
     await sock.sendMessage(jid, {
@@ -66,7 +66,7 @@ bmbtz({
   await repondre("> *𝙲𝚁𝙴𝙰𝚃𝙸𝙽𝙶 𝙿𝙷𝙾𝚃𝙾 📸*");
 
   try {
-    const url = `https://api.siputzx.my.id/api/ai/stable-diffusion?prompt=${encodeURIComponent(q)}`;
+    const url = `https://iamtkm.vercel.app/ai/NanoBanana?apikey=tkm&prompt=${encodeURIComponent(q)}`;
     const { data } = await axios.get(url, { responseType: "arraybuffer" });
 
     await sock.sendMessage(jid, {
@@ -93,7 +93,7 @@ bmbtz({
   await repondre("> *𝙲𝚁𝙴𝙰𝚃𝙸𝙽𝙶 𝙿𝙷𝙾𝚃𝙾 📸*");
 
   try {
-    const url = `https://api.siputzx.my.id/api/ai/stabilityai?prompt=${encodeURIComponent(q)}`;
+    const url = `https://iamtkm.vercel.app/ai/NanoBanana?apikey=tkm&prompt=${encodeURIComponent(q)}`;
     const { data } = await axios.get(url, { responseType: "arraybuffer" });
 
     await sock.sendMessage(jid, {
@@ -104,6 +104,33 @@ bmbtz({
 
   } catch (error) {
     console.error("StabilityAI Error:", error);
+    repondre(`❌ Error: ${error.message || "Failed to generate image."}`);
+  }
+});
+
+// =============== NANOBANANA ===============
+bmbtz({
+  nomCom: "nanobanana",
+  aliases: ["nano", "imagine4"],
+  categorie: "Search",
+  reaction: "📸"
+}, async (jid, sock, { ms, repondre, arg }) => {
+  const q = arg.join(" ");
+  if (!q) return repondre("❌ 𝙿𝚕𝚎𝚊𝚜𝚎 𝚙𝚛𝚘𝚟𝚒𝚍𝚎 𝚊 𝚙𝚛𝚘𝚖𝚙𝚝 𝚏𝚘𝚛 𝚝𝚑𝚎 𝚒𝚖𝚊𝚐𝚎.");
+  await repondre("> *𝙲𝚁𝙴𝙰𝚃𝙸𝙽𝙶 𝙿𝙷𝙾𝚃𝙾 📸*");
+
+  try {
+    const url = `https://iamtkm.vercel.app/ai/NanoBanana?apikey=tkm&prompt=${encodeURIComponent(q)}`;
+    const { data } = await axios.get(url, { responseType: "arraybuffer" });
+
+    await sock.sendMessage(jid, {
+      image: Buffer.from(data, "binary"),
+      caption: `🌲 *𝙶𝙴𝙽𝙴𝚁𝙰𝚃𝙴𝙳 𝙱𝚈 𝙱.𝙼.𝙱-𝚃𝙴𝙲𝙷* 😎\n🍌 𝚁𝙴𝙰𝙳𝚈: *${q}*`,
+      contextInfo
+    }, { quoted: quotedContact });
+
+  } catch (error) {
+    console.error("NanoBanana Error:", error);
     repondre(`❌ Error: ${error.message || "Failed to generate image."}`);
   }
 });
