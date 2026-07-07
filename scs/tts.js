@@ -4,7 +4,7 @@ const {bmbtz} = require("../devbmb/bmbtz");
 
 bmbtz( {
   nomCom : "dit",
- categorie : "User",
+ categorie : "Search",
   reaction : "👄" },
       async(dest,zk, commandeOptions)=> {
  
@@ -27,7 +27,7 @@ console.log(url);
 
 bmbtz( {
   nomCom : "itta",
- categorie : "User",
+ categorie : "Search",
   reaction : "👄" },
       async(dest,zk, commandeOptions)=> {
  
@@ -50,7 +50,7 @@ console.log(url);
 
 bmbtz( {
   nomCom : "say",
- categorie : "User",
+ categorie : "Search",
   reaction : "👄" },
       async(dest,zk, commandeOptions)=> {
  
