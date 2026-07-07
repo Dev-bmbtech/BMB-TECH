@@ -7,7 +7,7 @@ bmbtz({
   alias: ["newsletter", "id"],
   reaction: "📡",
   desc: "Get WhatsApp Channel info from link",
-  categorie: "menu"
+  categorie: "Group"
 }, async (dest, zk, commandeOptions) => {
   const { repondre, arg, ms } = commandeOptions;
   const q = arg.join(" ");
