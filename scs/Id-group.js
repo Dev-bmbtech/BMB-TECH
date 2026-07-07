@@ -7,7 +7,7 @@ bmbtz({
   alias: ["gcid", "gid"],
   reaction: "🆔",
   desc: "Get WhatsApp Group ID and info",
-  categorie: "menu"
+  categorie: "Group"
 }, async (dest, zk, commandeOptions) => {
   const { repondre, ms } = commandeOptions;
 
